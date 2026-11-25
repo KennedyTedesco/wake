@@ -21,22 +21,44 @@ function getHighlighter(): Promise<HighlighterCore> {
   return highlighter
 }
 
-function ensureLanguage(core: HighlighterCore, language: string): Promise<boolean> {
+function ensureLanguage(
+  core: HighlighterCore,
+  language: string,
+  visiting: ReadonlySet<string> = new Set()
+): Promise<boolean> {
   let pending = loaded.get(language)
   if (!pending) {
     const loader = LANGUAGE_LOADERS[language]
     pending = loader
-      ? loader().then(
-          async (module) => {
-            await core.loadLanguage(...module.default)
-            return true
-          },
-          () => false
-        )
+      ? loadWithEmbedded(core, loader, new Set([...visiting, language]))
       : Promise.resolve(false)
     loaded.set(language, pending)
   }
   return pending
+}
+
+/**
+ * The build ships each grammar alone (see `shikiGrammarOnly` in vite.config.ts), so the languages
+ * it embeds load here first. Shiki refuses a grammar whose embedded languages are missing, so
+ * the ones Wake does not ship leave the list.
+ */
+async function loadWithEmbedded(
+  core: HighlighterCore,
+  loader: (typeof LANGUAGE_LOADERS)[string],
+  visiting: ReadonlySet<string>
+): Promise<boolean> {
+  try {
+    for (const grammar of (await loader()).default) {
+      const embedded: string[] = []
+      for (const name of grammar.embeddedLangs ?? []) {
+        if (!visiting.has(name) && (await ensureLanguage(core, name, visiting))) embedded.push(name)
+      }
+      await core.loadLanguage({ ...grammar, embeddedLangs: embedded })
+    }
+    return true
+  } catch {
+    return false
+  }
 }
 
 async function highlight({ language, text }: HighlightRequest): Promise<Token[][] | null> {

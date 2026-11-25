@@ -1,6 +1,6 @@
 {
   "name": "wake",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "A GitHub Desktop style Git panel for Orca: changes, line-level commits, review notes for agents, history, branches and sync.",
   "license": "MIT",

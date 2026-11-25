@@ -37,7 +37,7 @@ Orca transpiles the worker's TypeScript when it loads it, so the worker uses onl
 - The worker asks git for diffs with `--diff-algorithm=histogram` and `--indent-heuristic`.
 - A line selection travels as ordinals of the changed lines, together with a hash of the patch. The worker rebuilds the patch and refuses the commit when the file changed in between (`src/shared/diff/patch.ts`).
 - The panel pairs removed and added lines by similarity (`src/panel/diff/align.ts`), marks changed words (`intraline.ts`), and finds moved code (`moved.ts`).
-- Syntax colors come from Shiki in a web worker (`highlight.worker.ts`).
+- Syntax colors come from Shiki in a web worker (`highlight.worker.ts`). `src/panel/diff/languages.ts` lists the grammars Wake ships. The build keeps only each module's own grammar (`shikiGrammarOnly` in `vite.config.ts`), and the worker loads the embedded languages on that list first, so Ruby does not drag in the 780 KB C++ grammar. Keep the plugin small: map a new extension to a grammar that is already on the list before you add one.
 
 ## Review notes
 
