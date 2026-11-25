@@ -4,7 +4,7 @@
   "execution": "trusted-worker",
   "id": "wake",
   "name": "Wake",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A Git panel that works like GitHub Desktop: commit exactly the lines you want, send review notes to your agent, read each commit like a pull request, and switch, pull and push without leaving Orca.",
   "license": "MIT",
   "author": {
@@ -105,7 +105,7 @@
   ],
   "cover": {
     "path": "docs/images/changes.webp",
-    "alt": "Wake in a full-size Orca tab: changed files as a folder tree, two lines left out of the commit, code that moved, and the commit message"
+    "alt": "Orca with Wake open in a tab next to two terminals: changed files as a tree, two lines left out of the commit, moved code, and the branch in the status bar"
   },
   "screenshots": [
     {

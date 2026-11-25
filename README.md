@@ -8,7 +8,7 @@
 
 Your agents change a lot of files. Wake shows you what changed, sends your review notes back to the agent, lets you commit exactly the lines you want, and shows the history one commit at a time, without leaving Orca.
 
-![Wake in a full-size Orca tab: changed files as a folder tree, two lines left out of the commit, code that moved, and the commit message](docs/images/changes.webp)
+![Orca with Wake open in a tab next to two terminal tabs: the projects in Orca's sidebar, changed files as a folder tree, two lines left out of the commit, code that moved, the commit message, and the branch in Orca's status bar](docs/images/changes.webp)
 
 ## Contents
 
