@@ -58,6 +58,14 @@ export function MultiFileDiff({ files, sourceFor, header }: Props) {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   const [closedDirs, setClosedDirs] = useState<ReadonlySet<string>>(new Set())
   const [treeOpen, setTreeOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const narrow = useNarrow(root)
+  // Narrow: the tree slides over the diffs. Wide: it is a column the person can hide.
+  const treeShown = narrow ? treeOpen : !prefs.fileTreeHidden
+  const toggleTree = () => {
+    if (narrow) setTreeOpen((open) => !open)
+    else updatePrefs({ fileTreeHidden: !prefs.fileTreeHidden })
+  }
   const scroller = useRef<HTMLDivElement>(null)
   const sections = useRef(new Map<string, HTMLElement>())
 
@@ -124,7 +132,12 @@ export function MultiFileDiff({ files, sourceFor, header }: Props) {
   const allCollapsed = ordered.length > 0 && ordered.every((file) => collapsed.has(file.path))
 
   return (
-    <div className="multi" data-tree-open={treeOpen || undefined}>
+    <div
+      ref={root}
+      className="multi"
+      data-narrow={narrow || undefined}
+      data-tree-shown={treeShown || undefined}
+    >
       <aside className="tree-pane" aria-label="Changed files">
         <label className="search tree-search">
           <Search size={13} />
@@ -170,10 +183,11 @@ export function MultiFileDiff({ files, sourceFor, header }: Props) {
         <div className="files-bar">
           <button
             type="button"
-            className="icon-button tree-toggle"
-            aria-pressed={treeOpen}
-            title="Show the file tree"
-            onClick={() => setTreeOpen((open) => !open)}
+            className="icon-button"
+            aria-pressed={treeShown}
+            title={treeShown ? 'Hide the file tree' : 'Show the file tree'}
+            aria-label={treeShown ? 'Hide the file tree' : 'Show the file tree'}
+            onClick={toggleTree}
           >
             <ListTree size={14} />
           </button>
@@ -251,6 +265,23 @@ export function MultiFileDiff({ files, sourceFor, header }: Props) {
       </div>
     </div>
   )
+}
+
+// Under this width the tree no longer fits beside the diffs.
+const NARROW_MAX = 680
+
+function useNarrow(element: React.RefObject<HTMLElement | null>): boolean {
+  const [narrow, setNarrow] = useState(false)
+  useEffect(() => {
+    const node = element.current
+    if (!node) return
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setNarrow(entry.contentRect.width < NARROW_MAX)
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [element])
+  return narrow
 }
 
 function TreeRows({

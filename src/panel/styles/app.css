@@ -831,10 +831,6 @@
 
 /* ---------- every file of a commit on one page ---------- */
 
-.detail {
-  container: detail / inline-size;
-}
-
 .multi {
   --files-bar: 38px;
   position: relative;
@@ -937,10 +933,6 @@
   flex: 1;
 }
 
-.tree-toggle {
-  display: none;
-}
-
 .file-section {
   border-block-end: 1px solid var(--border);
 }
@@ -991,26 +983,22 @@
   min-block-size: 320px;
 }
 
-/* Narrow: the tree slides over the diffs from a button in the bar. */
-@container detail (inline-size < 680px) {
-  .multi {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .tree-pane {
-    display: none;
-  }
-  .multi[data-tree-open] .tree-pane {
-    display: flex;
-    position: absolute;
-    inset-block: 0;
-    inset-inline-start: 0;
-    z-index: 5;
-    inline-size: min(320px, 88%);
-    box-shadow: 8px 0 24px oklch(0 0 none / 0.25);
-  }
-  .tree-toggle {
-    display: inline-grid;
-  }
+/* One column when the tree is hidden, or when it slides over the diffs in a narrow detail. */
+.multi:is([data-narrow], :not([data-tree-shown])) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.multi:not([data-tree-shown]) .tree-pane {
+  display: none;
+}
+
+.multi[data-narrow][data-tree-shown] .tree-pane {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 5;
+  inline-size: min(320px, 88%);
+  box-shadow: 8px 0 24px oklch(0 0 none / 0.25);
 }
 
 .detail-head {
@@ -1165,6 +1153,8 @@
 
 .commit-main {
   display: grid;
+  /* An implicit track grows to the nowrap title and pushes the row past the list: cap it. */
+  grid-template-columns: minmax(0, 1fr);
   min-inline-size: 0;
   flex: 1;
 }
@@ -1222,7 +1212,16 @@
   padding-inline: 12px;
   border-inline-start: 1px solid var(--border);
   color: var(--fg);
-  /* The sidebar resizer reaches 3px into the sidebar; its grab area must not cover the button. */
+}
+
+.tab.tab-fold {
+  flex: none;
+  inline-size: 34px;
+  border-inline-start: 1px solid var(--border);
+}
+
+/* The sidebar resizer reaches 3px into the sidebar; its grab area must not cover the last button. */
+.tabs > :last-child {
   margin-inline-end: 3px;
 }
 
@@ -1231,6 +1230,84 @@
 }
 
 .tab-notes .count {
+  background: var(--primary);
+  color: var(--primary-fg);
+}
+
+/* ---------- folded list ---------- */
+
+.rail {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  inline-size: 44px;
+  padding-block: 6px;
+  border-inline-end: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.rail-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 34px;
+  block-size: 34px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted-fg);
+}
+
+.rail-button:first-child {
+  margin-block-end: 6px;
+}
+
+.rail-button[aria-current] {
+  color: var(--fg);
+  background: var(--selected);
+}
+
+.rail-button[data-open],
+.rail-button:active {
+  background: var(--pressed);
+}
+
+.rail-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rail-button:hover {
+    color: var(--fg);
+    background: var(--hover);
+  }
+}
+
+.rail-badge {
+  position: absolute;
+  inset-block-start: 1px;
+  inset-inline-end: 0;
+  min-inline-size: 15px;
+  block-size: 15px;
+  padding-inline: 3px;
+  border-radius: 8px;
+  background: var(--pressed);
+  color: var(--fg);
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-badge[data-tone="warning"] {
+  background: var(--yellow);
+  color: oklch(0.2 0 none);
+}
+
+.rail-badge[data-tone="accent"] {
   background: var(--primary);
   color: var(--primary-fg);
 }

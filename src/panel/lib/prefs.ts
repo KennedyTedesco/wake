@@ -13,6 +13,10 @@ export type Prefs = {
   changesView: ChangesView
   /** Width of the list column in the wide layout, in px. */
   sidebarWidth: number
+  /** The list column folded to a rail of icons, so the diff takes the width. */
+  sidebarCollapsed: boolean
+  /** The file tree beside a commit's diffs is hidden. */
+  fileTreeHidden: boolean
 }
 
 const DEFAULTS: Prefs = {
@@ -21,7 +25,9 @@ const DEFAULTS: Prefs = {
   ignoreWhitespace: false,
   fullFile: false,
   changesView: 'tree',
-  sidebarWidth: 300
+  sidebarWidth: 300,
+  sidebarCollapsed: false,
+  fileTreeHidden: false
 }
 
 const KEY = 'wake.prefs'
@@ -53,6 +59,10 @@ export function loadPrefs(): Prefs {
     if ('sidebarWidth' in stored && typeof stored.sidebarWidth === 'number') {
       prefs.sidebarWidth = stored.sidebarWidth
     }
+    if ('sidebarCollapsed' in stored && typeof stored.sidebarCollapsed === 'boolean')
+      prefs.sidebarCollapsed = stored.sidebarCollapsed
+    if ('fileTreeHidden' in stored && typeof stored.fileTreeHidden === 'boolean')
+      prefs.fileTreeHidden = stored.fileTreeHidden
     return prefs
   } catch {
     return DEFAULTS

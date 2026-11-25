@@ -1,10 +1,28 @@
-import { ArrowLeft, FolderX, GitBranch, Server } from 'lucide-react'
+import {
+  ArrowLeft,
+  FileDiff,
+  FolderX,
+  GitBranch,
+  History,
+  MessageSquareText,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Server
+} from 'lucide-react'
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react'
 import type { RepoSnapshot } from '../shared/model'
 import { onWorkerEvent, operation } from './lib/bridge'
 import { surface } from './lib/surface'
-import { openNotes } from './state/notes'
-import { closeDetail, refresh, setSyncProgress, setTab, updatePrefs, useStore } from './state/store'
+import { openNotes, setTrayOpen, useNotes } from './state/notes'
+import {
+  closeDetail,
+  refresh,
+  setSyncProgress,
+  setTab,
+  type Tab,
+  updatePrefs,
+  useStore
+} from './state/store'
 import { DialogHost } from './ui/DialogHost'
 import { MenuHost } from './ui/Menu'
 import { Toasts } from './ui/Toasts'
@@ -139,8 +157,11 @@ function Shell({ repo }: { repo: RepoSnapshot }) {
   const tab = useStore((state) => state.tab)
   const showDetail = useStore((state) => state.showDetail)
   const sidebarWidth = useStore((state) => state.prefs.sidebarWidth)
+  const sidebarCollapsed = useStore((state) => state.prefs.sidebarCollapsed)
   const main = useRef<HTMLDivElement>(null)
   const wide = useWide(main)
+  // The narrow layout already shows the list and the diff in turns, so only wide folds the list.
+  const collapsed = wide && sidebarCollapsed
   useEffect(() => openNotes(repo.root), [repo.root])
 
   const back = wide ? null : (
@@ -164,38 +185,53 @@ function Shell({ repo }: { repo: RepoSnapshot }) {
         data-layout={wide ? 'wide' : 'narrow'}
         data-detail={(!wide && showDetail) || undefined}
       >
-        <aside className="sidebar" style={wide ? { inlineSize: sidebarWidth } : undefined}>
-          <div className="tabs">
-            <div className="tablist" role="tablist">
-              <button
-                type="button"
-                role="tab"
-                className="tab"
-                aria-selected={tab === 'changes'}
-                onClick={() => setTab('changes')}
-              >
-                Changes
-                {repo.files.length > 0 ? (
-                  <span className="count" data-tone={conflicted ? 'warning' : undefined}>
-                    {repo.files.length}
-                  </span>
-                ) : null}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                className="tab"
-                aria-selected={tab === 'history'}
-                onClick={() => setTab('history')}
-              >
-                History
-              </button>
+        {collapsed ? (
+          <Rail tab={tab} changes={repo.files.length} conflicted={conflicted} />
+        ) : (
+          <aside className="sidebar" style={wide ? { inlineSize: sidebarWidth } : undefined}>
+            <div className="tabs">
+              <div className="tablist" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  className="tab"
+                  aria-selected={tab === 'changes'}
+                  onClick={() => setTab('changes')}
+                >
+                  Changes
+                  {repo.files.length > 0 ? (
+                    <span className="count" data-tone={conflicted ? 'warning' : undefined}>
+                      {repo.files.length}
+                    </span>
+                  ) : null}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  className="tab"
+                  aria-selected={tab === 'history'}
+                  onClick={() => setTab('history')}
+                >
+                  History
+                </button>
+              </div>
+              <NotesButton />
+              {wide ? (
+                <button
+                  type="button"
+                  className="tab tab-fold"
+                  title="Hide the list"
+                  aria-label="Hide the list"
+                  onClick={() => updatePrefs({ sidebarCollapsed: true })}
+                >
+                  <PanelLeftClose size={15} />
+                </button>
+              ) : null}
             </div>
-            <NotesButton />
-          </div>
-          {tab === 'changes' ? <ChangesList repo={repo} /> : <HistoryList repo={repo} />}
-        </aside>
-        {wide ? <Resizer width={sidebarWidth} container={main} /> : null}
+            {tab === 'changes' ? <ChangesList repo={repo} /> : <HistoryList repo={repo} />}
+          </aside>
+        )}
+        {wide && !collapsed ? <Resizer width={sidebarWidth} container={main} /> : null}
         <section className="detail">
           {tab === 'changes' ? (
             <ChangesDetail repo={repo} leading={back} />
@@ -223,11 +259,13 @@ function Resizer({
     const startX = event.clientX
     const max = (container.current?.clientWidth ?? 900) * 0.6
     const onMove = (move: PointerEvent) => {
-      updatePrefs({
-        sidebarWidth: Math.round(
-          Math.max(SIDEBAR_MIN, Math.min(max, width + move.clientX - startX))
-        )
-      })
+      const next = width + move.clientX - startX
+      // Dragging the list well under its smallest width folds it, as in VS Code.
+      if (next < SIDEBAR_MIN / 2) {
+        updatePrefs({ sidebarCollapsed: true })
+        return
+      }
+      updatePrefs({ sidebarWidth: Math.round(Math.max(SIDEBAR_MIN, Math.min(max, next))) })
     }
     const onUp = () => {
       handle.removeEventListener('pointermove', onMove)
@@ -251,5 +289,69 @@ function Resizer({
         if (event.key === 'ArrowRight') updatePrefs({ sidebarWidth: width + 16 })
       }}
     />
+  )
+}
+
+/** The folded list: one icon for each view, and the way back to the full list. */
+function Rail({ tab, changes, conflicted }: { tab: Tab; changes: number; conflicted: boolean }) {
+  const notes = useNotes((state) => state.notes.length)
+  const trayOpen = useNotes((state) => state.trayOpen)
+  const open = (next: Tab) => {
+    setTab(next)
+    updatePrefs({ sidebarCollapsed: false })
+  }
+  return (
+    <nav className="rail" aria-label="Views">
+      <button
+        type="button"
+        className="rail-button"
+        title="Show the list"
+        aria-label="Show the list"
+        onClick={() => updatePrefs({ sidebarCollapsed: false })}
+      >
+        <PanelLeftOpen size={16} />
+      </button>
+      <button
+        type="button"
+        className="rail-button"
+        aria-current={tab === 'changes' || undefined}
+        title="Changes"
+        aria-label={`Changes, ${changes} files`}
+        onClick={() => open('changes')}
+      >
+        <FileDiff size={16} />
+        {changes > 0 ? (
+          <span className="rail-badge" data-tone={conflicted ? 'warning' : undefined}>
+            {changes}
+          </span>
+        ) : null}
+      </button>
+      <button
+        type="button"
+        className="rail-button"
+        aria-current={tab === 'history' || undefined}
+        title="History"
+        aria-label="History"
+        onClick={() => open('history')}
+      >
+        <History size={16} />
+      </button>
+      {notes > 0 || trayOpen ? (
+        <button
+          type="button"
+          className="rail-button"
+          data-open={trayOpen || undefined}
+          aria-expanded={trayOpen}
+          title={`${notes} ${notes === 1 ? 'note' : 'notes'} for the agent`}
+          aria-label={`${notes} ${notes === 1 ? 'note' : 'notes'} for the agent`}
+          onClick={() => setTrayOpen(!trayOpen)}
+        >
+          <MessageSquareText size={16} />
+          <span className="rail-badge" data-tone="accent">
+            {notes}
+          </span>
+        </button>
+      ) : null}
+    </nav>
   )
 }

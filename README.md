@@ -28,6 +28,8 @@ When you are ready, pick an agent that runs in the workspace and click **Send**.
 
 Open a commit and all of its files are on one page, the way GitHub shows a pull request. The file tree on the left follows your scroll. Click a file to jump to its diff, or type in the filter to find it. A commit with hundreds of files still opens at once, because each diff loads when you scroll near it.
 
+To give the diffs the full width, hide the list of commits with the button next to the **History** tab, or drag its edge to the left. A rail of icons stays at the edge to bring it back. Hide the file tree with the tree button above the diffs. Wake remembers both choices.
+
 ![The history of Wake itself: a commit with 16 files, the file tree beside it, and every diff on one page](docs/images/history.png)
 
 ## Diffs that are easy to read
@@ -73,6 +75,10 @@ Orca shows you what Wake can access before it runs. Wake runs `git` on your comp
 In the tab, press `Esc` to go back to your terminal. On Windows and Linux, use `Ctrl` for `⌘` and `Alt` for `⌥`.
 
 Orca opens a tab only for a file. For this, Wake puts a small file named `Wake` at the root of the workspace and tells git to ignore it. You can delete the file at any time.
+
+### From the + menu of the tab bar
+
+Orca does not let a plugin put an icon in the **+** menu yet. Use its search box instead: click **+**, type `Wake`, and press `Enter`. The search finds the `Wake` file and opens Wake in a tab. This works after you open Wake once in the workspace, because that first open creates the file.
 
 ## Settings
 
