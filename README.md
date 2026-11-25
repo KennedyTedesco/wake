@@ -10,7 +10,32 @@ Your agents change a lot of files. Wake shows you what changed, sends your revie
 
 ![Wake in a full-size Orca tab: changed files as a folder tree, two lines left out of the commit, code that moved, and the commit message](docs/images/changes.webp)
 
-**Contents:** [Commit only what you mean](#commit-only-what-you-mean) · [Send review notes to your agent](#send-review-notes-to-your-agent) · [Read a commit like a pull request](#read-a-commit-like-a-pull-request) · [Diffs that are easy to read](#diffs-that-are-easy-to-read) · [Branches, pull and push](#branches-pull-and-push) · [Install](#install) · [Open Wake](#open-wake) · [Settings](#settings) · [Good to know](#good-to-know)
+**Contents:** [Install](#install) · [Open Wake](#open-wake) · [Commit only what you mean](#commit-only-what-you-mean) · [Send review notes to your agent](#send-review-notes-to-your-agent) · [Read a commit like a pull request](#read-a-commit-like-a-pull-request) · [Diffs that are easy to read](#diffs-that-are-easy-to-read) · [Branches, pull and push](#branches-pull-and-push) · [Settings](#settings) · [Good to know](#good-to-know)
+
+## Install
+
+You need Orca 1.4.260 or later.
+
+1. In Orca, open **Settings → Plugins**, choose **Add plugin**, then **From a Git URL…**
+2. Paste `https://github.com/KennedyTedesco/wake` and choose **Install**.
+3. Orca shows what Wake can access. Wake runs `git` on your computer, so it asks for full access. Turn it on.
+
+From a terminal, `orca plugin install KennedyTedesco/wake` does the same. Wake is also published to Orca's community plugin directory: [open Wake in Orca](https://orca.dev/plugins/kennedytedesco.wake?catalog=community).
+
+## Open Wake
+
+Wake puts the current branch in Orca's status bar, at the bottom right. Click it, or press `⌘⇧G`, and Wake opens in a full-size tab next to your terminals.
+
+<p align="center"><img src="docs/images/open-wake.webp" width="640" alt="Orca's status bar with the branch item that opens Wake marked, and the shortcut Command Shift G"></p>
+
+| Where                                   | How                                                                   |
+| --------------------------------------- | --------------------------------------------------------------------- |
+| A full-size tab, next to your terminals | Click the branch in the status bar, `⌘⇧G`, or **Wake: Open in a tab** |
+| The right sidebar                       | `⌘⌥G`, or **Wake: Show in the sidebar**                               |
+
+In the tab, press `Esc` to go back to your terminal. On Windows and Linux, use `Ctrl` for `⌘` and `Alt` for `⌥`. The **Wake:** commands are in Orca's command palette.
+
+Orca opens a tab only for a file. For this, Wake puts a small file named `Wake` at the root of the workspace and tells git to ignore it. You can delete the file at any time. It also gives you a way in from the **+** menu of the tab bar: click **+**, type `Wake`, and press `Enter`.
 
 ## Commit only what you mean
 
@@ -58,33 +83,6 @@ One menu switches, creates, renames, merges and deletes branches. One button fet
 Wake takes its colors from your Orca theme, light or dark.
 
 ![Wake in a light Orca theme](docs/images/light.webp)
-
-## Install
-
-You need Orca 1.4.260 or later.
-
-Wake is in the Orca plugin directory: [open Wake in Orca](https://orca.dev/plugins/kennedytedesco.wake?catalog=community), or find it under **Settings → Plugins** in the community catalog. You can also install it from this repository:
-
-```sh
-orca plugin install KennedyTedesco/wake
-```
-
-Orca shows you what Wake can access before it runs. Wake runs `git` on your computer, so it asks for full access.
-
-## Open Wake
-
-| Where                                   | How                                                               |
-| --------------------------------------- | ----------------------------------------------------------------- |
-| A full-size tab, next to your terminals | `⌘⇧G`, the Git item in the status bar, or **Wake: Open in a tab** |
-| The right sidebar                       | `⌘⌥G`, or **Wake: Show in the sidebar**                           |
-
-In the tab, press `Esc` to go back to your terminal. On Windows and Linux, use `Ctrl` for `⌘` and `Alt` for `⌥`.
-
-Orca opens a tab only for a file. For this, Wake puts a small file named `Wake` at the root of the workspace and tells git to ignore it. You can delete the file at any time.
-
-### From the + menu of the tab bar
-
-Orca does not let a plugin put an icon in the **+** menu yet. Use its search box instead: click **+**, type `Wake`, and press `Enter`. The search finds the `Wake` file and opens Wake in a tab. This works after you open Wake once in the workspace, because that first open creates the file.
 
 ## Settings
 
