@@ -35,6 +35,7 @@ import { commitDiff, stashDiff, workingDiff } from './diff'
 import { failure, hostError, ok } from './failure'
 import { createFocusTracker, type FocusedWorkspace } from './focus'
 import { readDetails, readLog } from './history'
+import { currentPullRequest } from './pullRequest'
 import { createMutationQueue } from './queue'
 import { openRepo, type RepoContext } from './repo'
 import { launchWithNotes, listTargets, sendToAgent } from './review'
@@ -198,6 +199,8 @@ function start(orca: OrcaWorkerApi): () => void {
   wire('branch.delete', deleteBranch, true)
   wire('branch.merge', mergeBranch, true)
   wire('tag.create', createTag, true)
+
+  wire('pr.current', (ctx, { refresh }) => currentPullRequest(ctx, refresh))
 
   wire('sync.run', runSync, true)
   wire('sync.publish', publish, true)

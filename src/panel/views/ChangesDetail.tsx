@@ -1,13 +1,16 @@
 import {
   ArrowDown,
   ArrowUp,
+  CircleCheck,
+  CircleDot,
+  CircleX,
   CloudUpload,
   ExternalLink,
   GitPullRequest,
   PartyPopper
 } from 'lucide-react'
 import { type ReactNode, useEffect, useState } from 'react'
-import type { ChangedFile, RepoSnapshot, Stash } from '../../shared/model'
+import type { ChangedFile, PullRequest, RepoSnapshot, Stash } from '../../shared/model'
 import { DiffPane } from '../diff/DiffPane'
 import { openExternal, request } from '../lib/bridge'
 import { hostLabel, plural, pullRequestUrl, timeAgo } from '../lib/format'
@@ -46,11 +49,90 @@ function Suggestion({
   )
 }
 
+/** The open pull request of the branch, asked again after a push changes what it holds. */
+function usePullRequest(repo: RepoSnapshot): PullRequest | null {
+  const branch = repo.head.kind === 'branch' ? repo.head.name : null
+  const upstream = repo.head.kind === 'branch' ? repo.head.upstream : null
+  const onGitHub = repo.remote?.host === 'github' && upstream !== null
+  const ahead = upstream?.ahead ?? 0
+  const [found, setFound] = useState<{ branch: string; pr: PullRequest | null } | null>(null)
+  const [lastAhead, setLastAhead] = useState(ahead)
+  // A drop in commits ahead means a push landed: the checks and the title may have changed.
+  const pushed = ahead < lastAhead
+  if (ahead !== lastAhead) setLastAhead(ahead)
+
+  useEffect(() => {
+    if (!branch || !onGitHub) return
+    let live = true
+    request('pr.current', { refresh: pushed }).then(
+      (pr) => live && setFound({ branch, pr }),
+      () => live && setFound({ branch, pr: null })
+    )
+    return () => {
+      live = false
+    }
+  }, [branch, onGitHub, pushed])
+
+  return found && found.branch === branch && onGitHub ? found.pr : null
+}
+
+const CHECKS = {
+  passing: { label: 'Checks passing', icon: <CircleCheck size={13} /> },
+  failing: { label: 'Checks failing', icon: <CircleX size={13} /> },
+  pending: { label: 'Checks running', icon: <CircleDot size={13} /> }
+} as const
+
+const REVIEWS = {
+  approved: 'Approved',
+  'changes-requested': 'Changes requested',
+  'review-required': 'Review required'
+} as const
+
+/** The branch's open pull request, first and big: the place most people go next. */
+function PullRequestCard({ pr }: { pr: PullRequest }) {
+  return (
+    <section className="pr-card" aria-label={`Pull request #${pr.number}`}>
+      <span className="pr-card-icon" data-draft={pr.draft || undefined}>
+        <GitPullRequest size={20} />
+      </span>
+      <div className="pr-card-text">
+        <span className="pr-card-kicker">
+          {pr.draft ? 'Draft pull request' : 'Pull request open'} · <strong>#{pr.number}</strong>
+        </span>
+        <strong className="pr-card-title">{pr.title}</strong>
+        <span className="pr-card-chips">
+          {pr.checks ? (
+            <span className="pr-chip" data-tone={pr.checks}>
+              {CHECKS[pr.checks].icon}
+              {CHECKS[pr.checks].label}
+            </span>
+          ) : null}
+          {pr.review ? (
+            <span className="pr-chip" data-tone={pr.review}>
+              {REVIEWS[pr.review]}
+            </span>
+          ) : null}
+        </span>
+      </div>
+      <button
+        type="button"
+        className="button"
+        data-variant="primary"
+        onClick={() => void openExternal(pr.url)}
+      >
+        Open #{pr.number}
+        <ExternalLink size={13} />
+      </button>
+    </section>
+  )
+}
+
 function NoChanges({ repo }: { repo: RepoSnapshot }) {
   const upstream = repo.head.kind === 'branch' ? repo.head.upstream : null
   const branch = repo.head.kind === 'branch' ? repo.head.name : null
   const remote = repo.remote
-  const prUrl = remote && branch && upstream ? pullRequestUrl(remote, branch) : null
+  const pr = usePullRequest(repo)
+  const prUrl = remote && branch && upstream && !pr ? pullRequestUrl(remote, branch) : null
   const remoteName = remote?.name ?? 'origin'
   const hasSuggestions =
     (upstream !== null && (upstream.ahead > 0 || upstream.behind > 0)) ||
@@ -61,6 +143,7 @@ function NoChanges({ repo }: { repo: RepoSnapshot }) {
   if (repo.files.length > 0) {
     return (
       <div className="no-changes">
+        {pr ? <PullRequestCard pr={pr} /> : null}
         <p className="muted">Select a file to see its changes.</p>
       </div>
     )
@@ -76,6 +159,7 @@ function NoChanges({ repo }: { repo: RepoSnapshot }) {
           {hasSuggestions ? ' Here are a few things you can do next.' : ''}
         </p>
       </div>
+      {pr ? <PullRequestCard pr={pr} /> : null}
       <div className="suggestions">
         {upstream && upstream.behind > 0 ? (
           <Suggestion

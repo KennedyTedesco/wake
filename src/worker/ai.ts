@@ -2,15 +2,16 @@
 // Orca's own "Generate with AI" is not part of the plugin API, so the agent runs here, on the
 // person's own subscription, with nothing but the prompt as input.
 import { type ChildProcess, spawn } from 'node:child_process'
-import { access, constants, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { delimiter, join } from 'node:path'
+import { join } from 'node:path'
 import { parsePatch } from '../shared/diff/parse'
 import { buildPartialPatch } from '../shared/diff/patch'
 import type { FileSelection, OpResult } from '../shared/model'
 import { patchHash, workingPatch } from './diff'
 import { failure, ok } from './failure'
 import type { RepoContext } from './repo'
+import { findBinary, loginPath } from './userPath'
 
 export type AiAgent = 'claude' | 'codex' | 'gemini' | 'opencode'
 export type AiSettings = { agent: AiAgent | 'auto'; model: string; instructions: string }
@@ -90,52 +91,6 @@ const FILE_PATCH_LIMIT = 12_000
 const MAX_FILES = 60
 
 // ---------- finding the agent ----------
-
-let searchPath: Promise<string> | null = null
-
-/** PATH as the person's login shell sets it: Orca started from the Dock gives workers only a
- *  minimal PATH, while agent CLIs live in places such as ~/.local/bin or /opt/homebrew/bin. */
-function loginPath(): Promise<string> {
-  searchPath ??= readLoginPath()
-  return searchPath
-}
-
-function readLoginPath(): Promise<string> {
-  const fallback = process.env.PATH ?? ''
-  if (process.platform === 'win32') return Promise.resolve(fallback)
-  const { promise, resolve } = Promise.withResolvers<string>()
-  const shell = process.env.SHELL || '/bin/zsh'
-  // The marker skips whatever the profile prints before the PATH.
-  const child = spawn(shell, ['-lc', 'printf "\\n__PATH__%s" "$PATH"'], {
-    stdio: ['ignore', 'pipe', 'ignore']
-  })
-  let out = ''
-  const timer = setTimeout(() => child.kill(), 5000)
-  child.stdout.on('data', (chunk) => {
-    out += chunk
-  })
-  child.on('error', () => resolve(fallback))
-  child.on('close', () => {
-    clearTimeout(timer)
-    const found = out.split('__PATH__').at(-1)?.trim()
-    const home = process.env.HOME ?? ''
-    const extra = [join(home, '.local/bin'), '/opt/homebrew/bin', '/usr/local/bin']
-    resolve([found || fallback, ...extra].join(delimiter))
-  })
-  return promise
-}
-
-async function findBinary(bin: string, path: string): Promise<string | null> {
-  for (const dir of path.split(delimiter)) {
-    if (!dir) continue
-    const candidate = join(dir, bin)
-    try {
-      await access(candidate, constants.X_OK)
-      return candidate
-    } catch {}
-  }
-  return null
-}
 
 async function pickAgent(
   choice: AiSettings['agent'],

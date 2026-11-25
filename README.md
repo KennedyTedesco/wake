@@ -97,6 +97,8 @@ To give the diffs the full width, hide the list of commits with the button next 
 
 One menu switches, creates, renames, merges and deletes branches. One button fetches, pulls or pushes, and shows how many commits you are ahead or behind. If a pull stops on a conflict, Wake shows the conflict. You can keep one side, open the file, or mark it as resolved.
 
+When the branch already has an open pull request on GitHub, Wake puts it first: its number, its title, whether the checks pass and what the review says, and a button that opens it. This needs the [GitHub CLI](https://cli.github.com) (`gh`), signed in. Without it, Wake offers to create the pull request instead.
+
 ![The branch menu under the current branch: a filter, the default branch, and the recent branches with the time of their last commit](docs/images/branches.webp)
 
 ## Fits your Orca
@@ -120,7 +122,7 @@ Open **Settings → Plugins → Wake** in Orca.
 
 - Wake works with workspaces on your computer. Workspaces on SSH hosts are not supported yet.
 - A plugin cannot show a password prompt. If a push needs your credentials, Wake offers to run the command in a terminal once.
-- Wake has no telemetry and makes no network requests of its own. Only `git` talks to your remotes. The ✨ button sends the lines you kept to the coding agent that you chose, through its own CLI and account.
+- Wake has no telemetry and makes no network requests of its own. Only `git` talks to your remotes, and `gh`, when you have it, to find the branch's pull request. The ✨ button sends the lines you kept to the coding agent that you chose, through its own CLI and account.
 
 ## Contributing
 

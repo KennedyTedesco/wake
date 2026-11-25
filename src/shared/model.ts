@@ -199,3 +199,14 @@ export type AgentTarget = {
   /** When the agent entered `state`, in epoch milliseconds. */
   since: number
 }
+
+/** The open pull request of the current branch, as the person's `gh` CLI reports it. */
+export type PullRequest = {
+  number: number
+  title: string
+  url: string
+  draft: boolean
+  /** All checks together: any failure wins, then anything still running. Null without checks. */
+  checks: 'passing' | 'failing' | 'pending' | null
+  review: 'approved' | 'changes-requested' | 'review-required' | null
+}

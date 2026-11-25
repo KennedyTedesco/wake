@@ -4,7 +4,7 @@
   "execution": "trusted-worker",
   "id": "wake",
   "name": "Wake",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "A Git panel that works like GitHub Desktop: commit exactly the lines you want, send review notes to your agent, read each commit like a pull request, and switch, pull and push without leaving Orca.",
   "license": "MIT",
   "author": {

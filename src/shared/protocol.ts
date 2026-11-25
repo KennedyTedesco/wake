@@ -9,6 +9,7 @@ import type {
   FileDiff,
   FileSelection,
   OpResult,
+  PullRequest,
   RepoState,
   Stash,
   SyncOperation
@@ -109,6 +110,9 @@ export type Requests = {
   'review.send': { input: { terminalId: string; text: string; submit: boolean }; output: OpResult }
   /** Starts a new agent (the `aiAgent` setting) with the notes as its first prompt. */
   'review.launch': { input: { text: string }; output: OpResult }
+
+  /** The open pull request of the current branch, or null (no PR, no `gh`, or not GitHub). */
+  'pr.current': { input: { refresh: boolean }; output: PullRequest | null }
 }
 
 export type PanelEvents = {
