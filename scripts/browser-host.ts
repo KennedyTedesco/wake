@@ -40,7 +40,7 @@ function fakeOrca(repo: string, post: (event: string, payload: unknown) => void)
       agents: [
         {
           terminalId: 'preview-agent',
-          title: 'Send review notes to agents',
+          title: 'Show relative times as 3m ago',
           agent: 'claude',
           state: 'waiting',
           stateStartedAt: Date.now() - 4 * 60_000

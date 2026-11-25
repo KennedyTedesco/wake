@@ -104,32 +104,32 @@
     { "kind": "settings:own" }
   ],
   "cover": {
-    "path": "docs/images/changes.png",
-    "alt": "Wake in a full-size Orca tab: changed files as a folder tree, a diff with two excluded lines, code that moved, and a commit message that the agent wrote"
+    "path": "docs/images/changes.webp",
+    "alt": "Wake in a full-size Orca tab: changed files as a folder tree, two lines left out of the commit, code that moved, and the commit message"
   },
   "screenshots": [
     {
-      "path": "docs/images/notes.png",
-      "alt": "Review notes on a diff: a note on one line, a note on two lines, and the list of notes with the agents to send them to",
+      "path": "docs/images/notes.webp",
+      "alt": "Review notes in Wake: a note on two lines of the diff, selected code with the Add a note button under it, and the list of notes with the agents to send them to",
       "caption": "Send review notes to your agent"
     },
     {
-      "path": "docs/images/history.png",
-      "alt": "A commit with 16 files: the file tree beside it, and every diff on one page",
+      "path": "docs/images/history.webp",
+      "alt": "A Zustand commit with three files: the commit list, the file tree, and every diff on one page",
       "caption": "Read a commit like a pull request"
     },
     {
-      "path": "docs/images/side-by-side.png",
-      "alt": "A side-by-side diff with changed words marked and a function that moved inside the file",
+      "path": "docs/images/side-by-side.webp",
+      "alt": "A side-by-side diff with changed words marked and a function that moved, with the list folded to a rail of icons",
       "caption": "Side by side, with moved code marked"
     },
     {
-      "path": "docs/images/branches.png",
-      "alt": "The branch menu under the current branch, with a filter and the recent branches",
+      "path": "docs/images/branches.webp",
+      "alt": "The branch menu under the current branch: a filter, the default branch, and the recent branches with the time of their last commit",
       "caption": "Branches, pull and push in one place"
     },
     {
-      "path": "docs/images/light.png",
+      "path": "docs/images/light.webp",
       "alt": "Wake in a light Orca theme",
       "caption": "Follows your Orca theme",
       "theme": "light"

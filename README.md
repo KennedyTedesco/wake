@@ -6,7 +6,7 @@
 
 Your agents change a lot of files. Wake shows you what changed, sends your review notes back to the agent, lets you commit exactly the lines you want, and shows the history one commit at a time, without leaving Orca.
 
-![Wake in a full-size Orca tab: changed files as a folder tree, a diff with two excluded lines, code that moved, and a commit message that the agent wrote](docs/images/changes.png)
+![Wake in a full-size Orca tab: changed files as a folder tree, two lines left out of the commit, code that moved, and the commit message](docs/images/changes.webp)
 
 ## Commit only what you mean
 
@@ -22,7 +22,7 @@ Your notes collect in a list next to the **Changes** and **History** tabs. Each 
 
 When you are ready, pick an agent that runs in the workspace and click **Send**. Wake pastes all notes as one prompt, in the format of Orca's own diff notes. For each note, the agent gets the file, the line numbers, the code of those lines as diff lines (`+` added, `-` removed) and your comment, so it knows where to look and what changed there. You can also start a new agent with the notes, or copy them as text. Turn off **Submit at once** to add to the prompt before you press Enter.
 
-![Review notes on Wake's own code: a note on one line and a note on two lines in the diff, and the list of notes with the agents to send them to](docs/images/notes.png)
+![Review notes in Wake: a note on two lines of the diff, selected code with the Add a note button under it, and the list of notes with the agents to send them to](docs/images/notes.webp)
 
 ## Read a commit like a pull request
 
@@ -30,7 +30,7 @@ Open a commit and all of its files are on one page, the way GitHub shows a pull 
 
 To give the diffs the full width, hide the list of commits with the button next to the **History** tab, or drag its edge to the left. A rail of icons stays at the edge to bring it back. Hide the file tree with the tree button above the diffs. Wake remembers both choices.
 
-![The history of Wake itself: a commit with 16 files, the file tree beside it, and every diff on one page](docs/images/history.png)
+![A Zustand commit with three files: the commit list, the file tree, and every diff on one page](docs/images/history.webp)
 
 ## Diffs that are easy to read
 
@@ -41,19 +41,19 @@ To give the diffs the full width, hide the list of commits with the button next 
 - Show more lines around a change, or the whole file. Use `n` and `p` to go to the next or previous change.
 - Images: compare them side by side, with a swipe, or as an onion skin.
 
-![A side-by-side diff with changed words marked and a function that moved inside the file](docs/images/side-by-side.png)
+![A side-by-side diff with changed words marked and a function that moved, with the list folded to a rail of icons](docs/images/side-by-side.webp)
 
 ## Branches, pull and push
 
 One menu switches, creates, renames, merges and deletes branches. One button fetches, pulls or pushes, and shows how many commits you are ahead or behind. If a pull stops on a conflict, Wake shows the conflict. You can keep one side, open the file, or mark it as resolved.
 
-![The branch menu, open under the current branch, with a filter and the recent branches](docs/images/branches.png)
+![The branch menu under the current branch: a filter, the default branch, and the recent branches with the time of their last commit](docs/images/branches.webp)
 
 ## Fits your Orca
 
 Wake takes its colors from your Orca theme, light or dark.
 
-![Wake in a light Orca theme](docs/images/light.png)
+![Wake in a light Orca theme](docs/images/light.webp)
 
 ## Install
 
