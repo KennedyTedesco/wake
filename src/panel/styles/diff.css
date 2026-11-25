@@ -12,6 +12,10 @@
   --diff-move: oklch(0.64 0.15 300);
   --diff-move-bg: color-mix(in oklch, var(--diff-move) 13%, var(--bg));
   --diff-move-gutter: color-mix(in oklch, var(--diff-move) 24%, var(--bg));
+  /* Review notes: amber, like a highlighter, apart from the blue of the commit selection. */
+  --note: oklch(0.8 0.15 80);
+  --note-fg: oklch(0.22 0.03 80);
+  --note-tint: color-mix(in oklch, var(--note) 16%, transparent);
 }
 
 .diff-pane {
@@ -268,6 +272,8 @@ html.dark .tok {
 
 .move-tag {
   flex: none;
+  /* A label, not code: selecting lines to copy or note must not pick it up. */
+  user-select: none;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -600,8 +606,8 @@ html.dark .tok {
   padding: 0;
   border: 0;
   border-radius: 5px;
-  background: var(--primary);
-  color: var(--primary-fg);
+  background: var(--note);
+  color: var(--note-fg);
   cursor: pointer;
   opacity: 0;
 }
@@ -623,15 +629,138 @@ html.dark .tok {
   }
 }
 
-/* The lines a note being dragged covers. */
-.dl[data-picked],
-.half[data-picked] {
-  background: color-mix(in oklch, var(--primary) 16%, var(--bg));
+/* The range a note is about, as a box: the lines being picked, the note being written, or the
+   note under the pointer. A tint over the diff colors keeps added and removed lines readable. */
+[data-mark],
+[data-noted] {
+  position: relative;
 }
 
-.dl[data-picked] > .gutter,
-.half[data-picked] > .gutter {
-  box-shadow: inset 3px 0 0 var(--primary);
+[data-mark] > .dl,
+[data-mark] > .dl > .gutter,
+[data-mark][data-mark-side="old"] > .pair > .half:first-child,
+[data-mark][data-mark-side="old"] > .pair > .half:first-child > .gutter,
+[data-mark][data-mark-side="new"] > .pair > .half:last-child,
+[data-mark][data-mark-side="new"] > .pair > .half:last-child > .gutter {
+  background-image: linear-gradient(var(--note-tint), var(--note-tint));
+}
+
+[data-mark]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-inline-start: 3px solid var(--note);
+  pointer-events: none;
+}
+
+[data-mark="start"]::after,
+[data-mark="both"]::after {
+  border-block-start: 1px solid var(--note);
+}
+
+[data-mark="end"]::after,
+[data-mark="both"]::after {
+  border-block-end: 1px solid var(--note);
+}
+
+/* Lines that already have a note keep a thin bar. */
+[data-noted]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 2;
+  inline-size: 2px;
+  background: var(--note);
+  pointer-events: none;
+}
+
+/* Side by side, the box and the bar sit on the half the note is about. */
+[data-layout="split"] [data-mark-side="new"]::after,
+[data-layout="split"] [data-noted="new"]::before {
+  inset-inline-start: 50%;
+}
+
+[data-layout="split"] [data-mark-side="old"]::after {
+  inset-inline-end: 50%;
+}
+
+[data-picking] {
+  cursor: ns-resize;
+  user-select: none;
+}
+
+/* While a range is picked: its size. After code is selected: the way to note it. */
+.pick-chip {
+  position: fixed;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid color-mix(in oklch, var(--note) 55%, var(--border));
+  border-radius: 999px;
+  background: var(--popover);
+  color: var(--popover-fg);
+  font-family: var(--font);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px -8px oklch(0 0 none / 0.5);
+}
+
+.pick-chip > svg {
+  color: var(--note);
+}
+
+.pick-chip[data-at="bottom"] {
+  inset-block-end: 20px;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+.pick-chip-hint {
+  color: var(--muted-fg);
+  font-weight: 500;
+}
+
+button.pick-chip {
+  cursor: pointer;
+}
+
+button.pick-chip:active {
+  scale: 0.97;
+}
+
+button.pick-chip:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button.pick-chip:hover {
+    background: color-mix(in oklch, var(--note) 14%, var(--popover));
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pick-chip {
+    animation: pick-chip-in 120ms var(--ease-out);
+  }
+}
+
+@keyframes pick-chip-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+.pick-chip[data-at="bottom"] {
+  animation-name: none;
 }
 
 .note-card {
@@ -641,7 +770,7 @@ html.dark .tok {
   margin: 6px 12px 8px;
   padding: 8px 10px;
   border: 1px solid var(--border);
-  border-inline-start: 3px solid var(--primary);
+  border-inline-start: 3px solid var(--note);
   border-radius: var(--radius);
   background: var(--card);
   font-family: var(--font);
@@ -661,7 +790,7 @@ html.dark .tok {
 
 .note-icon {
   flex: none;
-  color: var(--primary);
+  color: var(--note);
 }
 
 .note-where {

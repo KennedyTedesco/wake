@@ -1406,7 +1406,7 @@
   margin: 0 12px 8px;
   padding: 8px 10px;
   border: 1px solid var(--border);
-  border-inline-start: 3px solid var(--primary);
+  border-inline-start: 3px solid var(--note);
   border-radius: var(--radius);
   font-size: var(--text-md);
   line-height: 1.45;
@@ -1455,6 +1455,18 @@
   line-height: 1.5;
   white-space: pre;
   overflow-x: auto;
+}
+
+.tray-note-code > span {
+  display: block;
+}
+
+.tray-note-code > [data-type="add"] {
+  color: var(--green);
+}
+
+.tray-note-code > [data-type="del"] {
+  color: var(--red);
 }
 
 .notes-send {

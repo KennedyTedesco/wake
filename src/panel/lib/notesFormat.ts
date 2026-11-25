@@ -11,6 +11,8 @@ function quoted(body: string): string {
   return `"${escaped}"`
 }
 
+// Enough context for the agent to find the place, short enough to keep the prompt readable.
+const EXCERPT_LINES = 30
 function where(note: ReviewNote): string[] {
   const lines: string[] = [`File: ${note.path}`]
   if (note.source.kind === 'commit') lines.push(`Commit: ${note.source.shortSha}`)
@@ -27,8 +29,10 @@ function where(note: ReviewNote): string[] {
     anchor.side === 'old' ? `${range} (removed lines, numbered as before the change)` : range
   )
   if (anchor.excerpt.length > 0) {
-    lines.push('Code:', ...anchor.excerpt.slice(0, 12).map((text) => `> ${text}`))
-    if (anchor.excerpt.length > 12) lines.push(`> … ${anchor.excerpt.length - 12} more lines`)
+    const shown = anchor.excerpt.slice(0, EXCERPT_LINES)
+    lines.push('Code (diff: + added, - removed):', ...shown.map((text) => `> ${text}`))
+    const rest = anchor.excerpt.length - shown.length
+    if (rest > 0) lines.push(`> … ${rest} more lines`)
   }
   return lines
 }

@@ -389,8 +389,18 @@ function TrayNote({ note }: { note: ReviewNote }) {
       </div>
       {excerpt.length > 0 ? (
         <pre className="tray-note-code">
-          {excerpt.slice(0, 3).join('\n')}
-          {excerpt.length > 3 ? `\n… ${excerpt.length - 3} more` : ''}
+          {excerpt.slice(0, 4).map((line, index) => (
+            <span
+              // biome-ignore lint/suspicious/noArrayIndexKey: the excerpt of a saved note never changes order
+              key={index}
+              data-type={line[0] === '+' ? 'add' : line[0] === '-' ? 'del' : undefined}
+            >
+              {line}
+            </span>
+          ))}
+          {excerpt.length > 4 ? (
+            <span className="muted">… {excerpt.length - 4} more lines</span>
+          ) : null}
         </pre>
       ) : null}
       {editing ? (

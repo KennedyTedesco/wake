@@ -16,11 +16,11 @@ The ✨ button writes the commit message from the lines you kept. It uses the co
 
 ## Send review notes to your agent
 
-Review the agent's work the way you review a pull request. Hover a line in a diff and click **+** to write a note. To note a range, drag the **+** over more lines. To note a whole file, use the note button in the file header. Notes work on your uncommitted changes and on every commit in the history.
+Review the agent's work the way you review a pull request. Select code in a diff with the mouse, as in any editor, and click **Add a note** under the selection. You can also hover a line and click **+**, or drag the **+** over more lines. A box marks the lines while you pick them and while you write, and a thin bar stays on lines that have a note. To note a whole file, use the note button in the file header. Notes work on your uncommitted changes and on every commit in the history.
 
 Your notes collect in a list next to the **Changes** and **History** tabs. Each note shows its file, its lines and the code on them. You can edit or remove a note there, or click it to go back to the diff. The notes stay until you send them, also when you close Orca.
 
-When you are ready, pick an agent that runs in the workspace and click **Send**. Wake pastes all notes as one prompt, in the format of Orca's own diff notes. For each note, the agent gets the file, the line numbers, the code on those lines and your comment, so it knows where to look. You can also start a new agent with the notes, or copy them as text. Turn off **Submit at once** to add to the prompt before you press Enter.
+When you are ready, pick an agent that runs in the workspace and click **Send**. Wake pastes all notes as one prompt, in the format of Orca's own diff notes. For each note, the agent gets the file, the line numbers, the code of those lines as diff lines (`+` added, `-` removed) and your comment, so it knows where to look and what changed there. You can also start a new agent with the notes, or copy them as text. Turn off **Submit at once** to add to the prompt before you press Enter.
 
 ![Review notes on Wake's own code: a note on one line and a note on two lines in the diff, and the list of notes with the agents to send them to](docs/images/notes.png)
 

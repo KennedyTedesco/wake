@@ -42,7 +42,8 @@ Orca transpiles the worker's TypeScript when it loads it, so the worker uses onl
 ## Review notes
 
 - The panel keeps the notes in `localStorage`, per repository (`src/panel/state/notes.ts`). Orca gives each plugin one storage, so the sidebar and the tab share the notes, and a `storage` event keeps both up to date.
-- `src/panel/lib/notesFormat.ts` writes the notes in the format of Orca's own diff notes (`File:`, `Line:` or `Lines:`, `User comment:`), with the code of the noted lines.
+- `src/panel/lib/notesFormat.ts` writes the notes in the format of Orca's own diff notes (`File:`, `Line:` or `Lines:`, `User comment:`). The code goes along as diff lines: every row between the first and the last line of the range, with its `+`, `-` or space, so removed lines inside the range reach the agent too.
+- `TextDiff` marks the range a note is about on its row wrappers (`data-mark`, `data-noted`), so a range can span rows of both sides. A text selection maps to lines through the rows' `data-index`.
 - The worker (`src/worker/review.ts`) lists the workspace's agents with `agents.list`. It sends the text with `terminal.sendText` as one bracketed paste, then a carriage return as a second write after a short delay, as Orca does for its own notes. An escape byte in a note becomes `␛`, so a note cannot end the paste early. Orca refuses an empty `text`, so Enter cannot go as `enter: true` alone.
 - **New agent** calls `agent.launch` with the agent of the `aiAgent` setting.
 - `pnpm preview` answers `agents.list`, `terminal.sendText` and `agent.launch` with stubs and logs what the worker sends.

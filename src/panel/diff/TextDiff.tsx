@@ -1,5 +1,12 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { ChevronDown, ChevronsUpDown, ChevronUp, MoveRight, Plus } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronUp,
+  MessageSquarePlus,
+  MoveRight,
+  Plus
+} from 'lucide-react'
 import {
   type KeyboardEvent,
   memo,
@@ -84,6 +91,63 @@ function lineOnSide(line: DiffLine | null, side: Side): number | null {
 
 function rowLines(row: ViewRow): (DiffLine | null)[] {
   return row.kind === 'line' ? [row.line] : row.kind === 'pair' ? [row.left, row.right] : []
+}
+
+/** Lines of one side, by number, that a note covers or the person is picking. */
+type LineRange = { side: Side; start: number; end: number }
+
+/** The first and last row that show a line of `range`; the rows between belong to it too. */
+function rowSpan(
+  rows: readonly ViewRow[],
+  range: LineRange
+): { first: number; last: number } | null {
+  let first = -1
+  let last = -1
+  rows.forEach((row, i) => {
+    const inside = rowLines(row).some((line) => {
+      const n = lineOnSide(line, range.side)
+      return n !== null && n >= range.start && n <= range.end
+    })
+    if (!inside) return
+    if (first < 0) first = i
+    last = i
+  })
+  return first < 0 ? null : { first, last }
+}
+
+/** The code of a range as diff lines, `+`, `-` or a space first, so removed lines inside it show too. */
+function excerptOf(rows: readonly Row[], range: LineRange): string[] {
+  const span = rowSpan(rows, range)
+  if (!span) return []
+  const lines: string[] = []
+  for (const row of rows.slice(span.first, span.last + 1)) {
+    const line =
+      row.kind === 'line'
+        ? row.line
+        : row.kind === 'pair'
+          ? range.side === 'old'
+            ? row.left
+            : row.right
+          : null
+    if (line) lines.push(`${MARKER[line.type]}${line.text}`)
+  }
+  return lines
+}
+
+/** Where a node of a text selection sits: its row, and in the split layout the side of its half. */
+function rowOf(node: Node): { index: number; half: Side | null } | null {
+  const element = node instanceof Element ? node : node.parentElement
+  const row = element?.closest<HTMLElement>('[data-index]')
+  if (!element || !row) return null
+  const half = element.closest('.half')
+  return {
+    index: Number(row.dataset.index),
+    half: half ? (half.parentElement?.firstElementChild === half ? 'old' : 'new') : null
+  }
+}
+
+function rangeLabel({ start, end }: LineRange): string {
+  return start === end ? `Line ${start}` : `Lines ${start}–${end} · ${end - start + 1} lines`
 }
 
 /** The rows with each note (and the open composer) right under the last line it covers. */
@@ -196,21 +260,16 @@ export function TextDiff({
   const finishPick = useRef<(pick: Pick) => void>(() => {})
   finishPick.current = (current) => {
     if (!review) return
-    const start = Math.min(current.from, current.to)
-    const end = Math.max(current.from, current.to)
-    const excerpt: string[] = []
-    const seen = new Set<number>()
-    for (const row of baseRows) {
-      for (const line of rowLines(row)) {
-        const n = lineOnSide(line, current.side)
-        if (line && n !== null && n >= start && n <= end && !seen.has(n)) {
-          seen.add(n)
-          excerpt.push(line.text)
-        }
-      }
+    const range = {
+      side: current.side,
+      start: Math.min(current.from, current.to),
+      end: Math.max(current.from, current.to)
     }
-    review.begin({ kind: 'lines', side: current.side, start, end, excerpt })
+    review.begin({ kind: 'lines', ...range, excerpt: excerptOf(baseRows, range) })
   }
+  // Code selected with the mouse offers a note on its lines, from a button under the selection.
+  const [selected, setSelected] = useState<(LineRange & { x: number; y: number }) | null>(null)
+  const [hoveredNote, setHoveredNote] = useState<string | null>(null)
   useEffect(() => {
     const stop = () => {
       drag.current = null
@@ -247,11 +306,93 @@ export function TextDiff({
     },
     [movePick]
   )
-  const isPicked = (line: DiffLine | null, side: Side): boolean => {
-    if (!pick || pick.side !== side) return false
-    const n = lineOnSide(line, side)
-    return n !== null && n >= Math.min(pick.from, pick.to) && n <= Math.max(pick.from, pick.to)
+  const onSelectEnd = () => {
+    const chosen = window.getSelection()
+    const root = scrollRef.current
+    if (
+      !review ||
+      !root ||
+      !chosen ||
+      chosen.isCollapsed ||
+      !chosen.anchorNode ||
+      !chosen.focusNode
+    )
+      return
+    if (!root.contains(chosen.anchorNode) || !root.contains(chosen.focusNode)) return
+    const anchor = rowOf(chosen.anchorNode)
+    const focus = rowOf(chosen.focusNode)
+    if (!anchor || !focus) return
+    const covered = rows
+      .slice(Math.min(anchor.index, focus.index), Math.max(anchor.index, focus.index) + 1)
+      .flatMap(rowLines)
+    // Unified: removed lines alone are numbered as before the change, anything else as after it.
+    const side: Side =
+      anchor.half ?? (covered.every((line) => !line || line.type === 'del') ? 'old' : 'new')
+    const numbers = covered.flatMap((line) => {
+      const n = lineOnSide(line, side)
+      return n === null ? [] : [n]
+    })
+    const box = [...chosen.getRangeAt(0).getClientRects()].at(-1)
+    if (numbers.length === 0 || !box) return
+    setSelected({
+      side,
+      start: Math.min(...numbers),
+      end: Math.max(...numbers),
+      x: box.left,
+      y: box.bottom
+    })
   }
+  useEffect(() => {
+    if (!selected) return
+    const clear = () => setSelected(null)
+    const onSelectionChange = () => {
+      if (window.getSelection()?.isCollapsed) clear()
+    }
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') clear()
+    }
+    document.addEventListener('selectionchange', onSelectionChange)
+    window.addEventListener('scroll', clear, { capture: true, passive: true })
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('selectionchange', onSelectionChange)
+      window.removeEventListener('scroll', clear, { capture: true })
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [selected])
+  const noteSelection = () => {
+    if (!selected) return
+    window.getSelection()?.removeAllRanges()
+    setSelected(null)
+    finishPick.current({ side: selected.side, from: selected.start, to: selected.end })
+  }
+
+  // The range to box: the lines being picked, then the note being written, then the note under the pointer.
+  const picking: LineRange | null = pick
+    ? { side: pick.side, start: Math.min(pick.from, pick.to), end: Math.max(pick.from, pick.to) }
+    : null
+  const draftAnchor = review?.draft?.anchor
+  const hoveredAnchor = review?.notes.find((note) => note.id === hoveredNote)?.anchor
+  const marked =
+    picking ??
+    (draftAnchor?.kind === 'lines' ? draftAnchor : null) ??
+    (hoveredAnchor?.kind === 'lines' ? hoveredAnchor : null)
+  const markSpan = marked ? rowSpan(rows, marked) : null
+  const markOf = (index: number): 'start' | 'end' | 'both' | 'mid' | undefined => {
+    if (!markSpan || index < markSpan.first || index > markSpan.last) return undefined
+    if (markSpan.first === markSpan.last) return 'both'
+    return index === markSpan.first ? 'start' : index === markSpan.last ? 'end' : 'mid'
+  }
+  // Lines with a saved note keep a thin bar, so the person sees what was already noted.
+  const noted = useMemo(() => {
+    const sides = new Map<number, Side>()
+    for (const note of review?.notes ?? []) {
+      if (note.anchor.kind !== 'lines') continue
+      const span = rowSpan(rows, note.anchor)
+      for (let i = span?.first ?? 0; span && i <= span.last; i++) sides.set(i, note.anchor.side)
+    }
+    return sides
+  }, [rows, review?.notes])
 
   const onGutterDown = useCallback(
     (line: DiffLine) => {
@@ -336,97 +477,142 @@ export function TextDiff({
   }
 
   const reviewing = review !== null
-  const renderRow = (row: ViewRow, index: number, measure?: (node: Element | null) => void) => (
-    <div
-      key={row.key}
-      className={inline ? 'diff-row' : undefined}
-      data-index={index}
-      data-flash={flash === row.key || undefined}
-      ref={measure}
+  const renderRow = (row: ViewRow, index: number, measure?: (node: Element | null) => void) => {
+    const isLine = row.kind === 'line' || row.kind === 'pair'
+    const mark = isLine ? markOf(index) : undefined
+    const notedSide = isLine ? noted.get(index) : undefined
+    const noteId = row.kind === 'note' ? row.note.id : null
+    return (
+      // biome-ignore lint/a11y/noStaticElementInteractions: hovering a note card shows the lines it is about
+      <div
+        key={row.key}
+        className={inline ? 'diff-row' : undefined}
+        data-index={index}
+        data-flash={flash === row.key || undefined}
+        data-mark={mark}
+        data-noted={notedSide}
+        data-mark-side={mark ? marked?.side : undefined}
+        ref={measure}
+        onMouseEnter={noteId ? () => setHoveredNote(noteId) : undefined}
+        onMouseLeave={noteId ? () => setHoveredNote(null) : undefined}
+      >
+        {row.kind === 'hunk' ? (
+          <HunkHeader
+            row={row}
+            selection={selection}
+            canExpand={newText !== null && !fullFile}
+            onExpand={expand}
+          />
+        ) : row.kind === 'note' ? (
+          <NoteCard note={row.note} />
+        ) : row.kind === 'composer' ? (
+          <NoteComposer draft={row.draft} />
+        ) : row.kind === 'line' ? (
+          <UnifiedLine
+            line={row.line}
+            highlights={highlights}
+            ranges={intraline(row.line)}
+            move={row.line.type === 'context' ? undefined : moves.get(row.line.ordinal)}
+            onJump={jump}
+            selected={isSelected(row.line, selection)}
+            selectable={selection !== null}
+            onGutterDown={onGutterDown}
+            onGutterEnter={onGutterEnter}
+            reviewing={reviewing}
+            onNoteDown={onNoteDown}
+            onPickEnter={onPickEnter}
+          />
+        ) : (
+          <SplitLine
+            row={row}
+            highlights={highlights}
+            intraline={intraline}
+            moves={moves}
+            onJump={jump}
+            selection={selection}
+            onGutterDown={onGutterDown}
+            onGutterEnter={onGutterEnter}
+            reviewing={reviewing}
+            onNoteDown={onNoteDown}
+            onPickEnter={onPickEnter}
+          />
+        )}
+      </div>
+    )
+  }
+
+  const chips = picking ? (
+    <output className="pick-chip" data-at="bottom">
+      <MessageSquarePlus size={13} />
+      {rangeLabel(picking)}
+      <span className="pick-chip-hint">Release to write a note</span>
+    </output>
+  ) : selected ? (
+    <button
+      type="button"
+      className="pick-chip"
+      style={{ insetInlineStart: selected.x, insetBlockStart: selected.y + 6 }}
+      // Keeps the text selection alive until the click lands.
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={noteSelection}
     >
-      {row.kind === 'hunk' ? (
-        <HunkHeader
-          row={row}
-          selection={selection}
-          canExpand={newText !== null && !fullFile}
-          onExpand={expand}
-        />
-      ) : row.kind === 'note' ? (
-        <NoteCard note={row.note} />
-      ) : row.kind === 'composer' ? (
-        <NoteComposer draft={row.draft} />
-      ) : row.kind === 'line' ? (
-        <UnifiedLine
-          line={row.line}
-          highlights={highlights}
-          ranges={intraline(row.line)}
-          move={row.line.type === 'context' ? undefined : moves.get(row.line.ordinal)}
-          onJump={jump}
-          selected={isSelected(row.line, selection)}
-          selectable={selection !== null}
-          onGutterDown={onGutterDown}
-          onGutterEnter={onGutterEnter}
-          reviewing={reviewing}
-          picked={isPicked(row.line, row.line.type === 'del' ? 'old' : 'new')}
-          onNoteDown={onNoteDown}
-          onPickEnter={onPickEnter}
-        />
-      ) : (
-        <SplitLine
-          row={row}
-          highlights={highlights}
-          intraline={intraline}
-          moves={moves}
-          onJump={jump}
-          selection={selection}
-          onGutterDown={onGutterDown}
-          onGutterEnter={onGutterEnter}
-          reviewing={reviewing}
-          isPicked={isPicked}
-          onNoteDown={onNoteDown}
-          onPickEnter={onPickEnter}
-        />
-      )}
-    </div>
-  )
+      <MessageSquarePlus size={13} />
+      Add a note
+      <span className="pick-chip-hint">{rangeLabel(selected)}</span>
+    </button>
+  ) : null
 
   if (inline) {
     return (
-      <div
-        ref={scrollRef}
-        className="diff-inline"
-        data-layout={layout}
-        data-wrap={wrap || undefined}
-      >
-        {rows.map((row, index) => renderRow(row, index))}
-      </div>
+      <>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a text selection ends here and offers a note */}
+        <div
+          ref={scrollRef}
+          className="diff-inline"
+          data-layout={layout}
+          data-wrap={wrap || undefined}
+          data-picking={picking ? true : undefined}
+          onMouseUp={onSelectEnd}
+        >
+          {rows.map((row, index) => renderRow(row, index))}
+        </div>
+        {chips}
+      </>
     )
   }
 
   const items = virtualizer.getVirtualItems()
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: n and p step through changes
-    <div
-      ref={scrollRef}
-      className="diff-scroll"
-      role="region"
-      aria-label="Diff"
-      // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrolling region must take focus to scroll by keyboard
-      tabIndex={0}
-      onKeyDown={onKeyDown}
-      data-layout={layout}
-      data-wrap={wrap || undefined}
-      data-selectable={selection ? true : undefined}
-    >
-      <div className="diff-canvas" style={{ height: virtualizer.getTotalSize() }}>
-        <div className="diff-window" style={{ transform: `translateY(${items[0]?.start ?? 0}px)` }}>
-          {items.map((item) => {
-            const row = rows[item.index]
-            return row ? renderRow(row, item.index, virtualizer.measureElement) : null
-          })}
+    <>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: n and p step through changes */}
+      <div
+        ref={scrollRef}
+        className="diff-scroll"
+        role="region"
+        aria-label="Diff"
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrolling region must take focus to scroll by keyboard
+        tabIndex={0}
+        onKeyDown={onKeyDown}
+        onMouseUp={onSelectEnd}
+        data-layout={layout}
+        data-wrap={wrap || undefined}
+        data-selectable={selection ? true : undefined}
+        data-picking={picking ? true : undefined}
+      >
+        <div className="diff-canvas" style={{ height: virtualizer.getTotalSize() }}>
+          <div
+            className="diff-window"
+            style={{ transform: `translateY(${items[0]?.start ?? 0}px)` }}
+          >
+            {items.map((item) => {
+              const row = rows[item.index]
+              return row ? renderRow(row, item.index, virtualizer.measureElement) : null
+            })}
+          </div>
         </div>
       </div>
-    </div>
+      {chips}
+    </>
   )
 }
 
@@ -553,7 +739,6 @@ const UnifiedLine = memo(function UnifiedLine({
   onGutterDown,
   onGutterEnter,
   reviewing,
-  picked,
   onNoteDown,
   onPickEnter
 }: {
@@ -564,7 +749,6 @@ const UnifiedLine = memo(function UnifiedLine({
   onJump: JumpHandler
   selected: boolean
   selectable: boolean
-  picked: boolean
 } & LineHandlers &
   NoteHandlers) {
   const changed = line.type !== 'context'
@@ -575,7 +759,6 @@ const UnifiedLine = memo(function UnifiedLine({
       data-type={line.type}
       data-selected={(selectable && changed && selected) || undefined}
       data-moved={move ? true : undefined}
-      data-picked={picked || undefined}
       onMouseEnter={reviewing ? () => onPickEnter(line) : undefined}
     >
       {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer shortcut; keyboard users use the hunk and file toggles */}
@@ -632,7 +815,6 @@ function SplitLine({
   onGutterDown,
   onGutterEnter,
   reviewing,
-  isPicked,
   onNoteDown,
   onPickEnter
 }: {
@@ -642,7 +824,6 @@ function SplitLine({
   moves: Map<number, Move>
   onJump: JumpHandler
   selection: LineSelection | null
-  isPicked: (line: DiffLine | null, side: Side) => boolean
 } & LineHandlers &
   NoteHandlers) {
   const side = (line: DiffLine | null, which: 'left' | 'right') => {
@@ -666,7 +847,6 @@ function SplitLine({
         data-type={line.type}
         data-selected={(selection && changed && selected) || undefined}
         data-moved={move ? true : undefined}
-        data-picked={isPicked(line, noteSide) || undefined}
         onMouseEnter={reviewing ? () => onPickEnter(line) : undefined}
       >
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer shortcut; keyboard users use the hunk and file toggles */}

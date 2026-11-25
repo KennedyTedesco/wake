@@ -21,7 +21,7 @@ describe('formatNotes', () => {
           side: 'new',
           start: 12,
           end: 13,
-          excerpt: ['const a = 1', 'const b = 2']
+          excerpt: ['-const a = 1', '+const a = 2', ' const b = 2']
         },
         body: 'Use one "const" here\nand name it total'
       })
@@ -32,9 +32,10 @@ describe('formatNotes', () => {
         '',
         'File: src/a.ts',
         'Lines: 12-13',
-        'Code:',
-        '> const a = 1',
-        '> const b = 2',
+        'Code (diff: + added, - removed):',
+        '> -const a = 1',
+        '> +const a = 2',
+        '>  const b = 2',
         'User comment: "Use one \\"const\\" here\\nand name it total"'
       ].join('\n')
     )
