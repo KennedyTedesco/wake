@@ -4,9 +4,13 @@
 
 <p align="center">A Git panel for <a href="https://orca.dev">Orca</a> that works like GitHub Desktop.</p>
 
+<p align="center"><a href="https://github.com/KennedyTedesco/wake/actions/workflows/ci.yml"><img src="https://github.com/KennedyTedesco/wake/actions/workflows/ci.yml/badge.svg" alt="CI"></a></p>
+
 Your agents change a lot of files. Wake shows you what changed, sends your review notes back to the agent, lets you commit exactly the lines you want, and shows the history one commit at a time, without leaving Orca.
 
 ![Wake in a full-size Orca tab: changed files as a folder tree, two lines left out of the commit, code that moved, and the commit message](docs/images/changes.webp)
+
+**Contents:** [Commit only what you mean](#commit-only-what-you-mean) · [Send review notes to your agent](#send-review-notes-to-your-agent) · [Read a commit like a pull request](#read-a-commit-like-a-pull-request) · [Diffs that are easy to read](#diffs-that-are-easy-to-read) · [Branches, pull and push](#branches-pull-and-push) · [Install](#install) · [Open Wake](#open-wake) · [Settings](#settings) · [Good to know](#good-to-know)
 
 ## Commit only what you mean
 
@@ -59,6 +63,8 @@ Wake takes its colors from your Orca theme, light or dark.
 
 You need Orca 1.4.260 or later.
 
+Wake is in the Orca plugin directory: [open Wake in Orca](https://orca.dev/plugins/kennedytedesco.wake?catalog=community), or find it under **Settings → Plugins** in the community catalog. You can also install it from this repository:
+
 ```sh
 orca plugin install KennedyTedesco/wake
 ```
@@ -95,6 +101,7 @@ Open **Settings → Plugins → Wake** in Orca.
 
 - Wake works with workspaces on your computer. Workspaces on SSH hosts are not supported yet.
 - A plugin cannot show a password prompt. If a push needs your credentials, Wake offers to run the command in a terminal once.
+- Wake has no telemetry and makes no network requests of its own. Only `git` talks to your remotes. The ✨ button sends the lines you kept to the coding agent that you chose, through its own CLI and account.
 
 ## Contributing
 
@@ -102,4 +109,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) to run Wake from source.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
