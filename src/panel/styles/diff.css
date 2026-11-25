@@ -1,0 +1,723 @@
+:root {
+  --diff-add-bg: color-mix(in oklch, var(--green) 13%, var(--bg));
+  --diff-add-word: color-mix(in oklch, var(--green) 34%, var(--bg));
+  --diff-add-gutter: color-mix(in oklch, var(--green) 22%, var(--bg));
+  --diff-del-bg: color-mix(in oklch, var(--red) 12%, var(--bg));
+  --diff-del-word: color-mix(in oklch, var(--red) 32%, var(--bg));
+  --diff-del-gutter: color-mix(in oklch, var(--red) 20%, var(--bg));
+  --diff-hunk-bg: color-mix(in oklch, var(--blue) 9%, var(--bg));
+  --diff-selected-gutter: color-mix(in oklch, var(--blue) 62%, var(--bg));
+  --diff-select: var(--blue);
+  --diff-line: 20px;
+  --diff-move: oklch(0.64 0.15 300);
+  --diff-move-bg: color-mix(in oklch, var(--diff-move) 13%, var(--bg));
+  --diff-move-gutter: color-mix(in oklch, var(--diff-move) 24%, var(--bg));
+}
+
+.diff-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-block-size: 0;
+  min-inline-size: 0;
+}
+
+.diff-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  block-size: 38px;
+  padding-inline: 10px 6px;
+  border-block-end: 1px solid var(--border);
+  flex: none;
+}
+
+.diff-title {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  white-space: nowrap;
+  overflow: clip;
+  font-size: var(--text-md);
+}
+
+.diff-title .path-name {
+  font-weight: 600;
+}
+
+.diff-stats {
+  display: inline-flex;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  flex: none;
+}
+
+.diff-body {
+  flex: 1;
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.diff-message {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  flex: 1;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted-fg);
+}
+
+/* ---------- text diff ---------- */
+
+.diff-scroll {
+  flex: 1;
+  min-block-size: 0;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  line-height: var(--diff-line);
+  tab-size: 4;
+  contain: strict;
+}
+
+.diff-canvas {
+  position: relative;
+  min-inline-size: 100%;
+  inline-size: max-content;
+}
+
+.diff-scroll[data-wrap] .diff-canvas {
+  inline-size: 100%;
+}
+
+.diff-window {
+  min-inline-size: 100%;
+}
+
+/* A file's diff inside a page of several files: full height, the page scrolls. */
+.diff-inline {
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  line-height: var(--diff-line);
+  tab-size: 4;
+}
+
+.diff-inline:not([data-wrap]) > .diff-row {
+  inline-size: max-content;
+  min-inline-size: 100%;
+}
+
+/* The browser skips layout and paint for rows far off screen. */
+.diff-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--diff-line);
+}
+
+.dl,
+.half {
+  display: flex;
+  min-block-size: var(--diff-line);
+}
+
+.dl[data-type="add"],
+.half[data-type="add"] {
+  background: var(--diff-add-bg);
+}
+
+.dl[data-type="del"],
+.half[data-type="del"] {
+  background: var(--diff-del-bg);
+}
+
+.half[data-type="empty"] {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0 4px,
+    color-mix(in oklch, var(--fg) 4%, transparent) 4px 5px
+  );
+}
+
+.gutter {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  display: flex;
+  flex: none;
+  background: var(--bg);
+  color: var(--muted-fg);
+  user-select: none;
+  border-inline-end: 1px solid var(--soft-border);
+}
+
+.dl[data-type="add"] .gutter,
+.half[data-type="add"] .gutter {
+  background: var(--diff-add-gutter);
+}
+
+.dl[data-type="del"] .gutter,
+.half[data-type="del"] .gutter {
+  background: var(--diff-del-gutter);
+}
+
+.ln {
+  inline-size: 5ch;
+  padding-inline-end: 1ch;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+}
+
+.dl .ln:first-child {
+  inline-size: 5.5ch;
+}
+
+/* Line numbers double as the include checkbox, as in GitHub Desktop. */
+.diff-scroll[data-selectable] .gutter[data-clickable] {
+  cursor: pointer;
+}
+
+.diff-scroll[data-selectable] [data-selected] > .gutter {
+  background: var(--diff-selected-gutter);
+  color: oklch(0.99 0 none);
+  box-shadow: inset 3px 0 0 var(--diff-select);
+}
+
+.diff-scroll[data-selectable] .dl:not([data-selected])[data-type="add"],
+.diff-scroll[data-selectable] .dl:not([data-selected])[data-type="del"],
+.diff-scroll[data-selectable] .half:not([data-selected])[data-type="add"],
+.diff-scroll[data-selectable] .half:not([data-selected])[data-type="del"] {
+  opacity: 0.55;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .diff-scroll[data-selectable] .gutter[data-clickable]:hover {
+    box-shadow: inset 3px 0 0 color-mix(in oklch, var(--diff-select) 60%, transparent);
+  }
+}
+
+.marker {
+  flex: none;
+  inline-size: 2ch;
+  text-align: center;
+  color: var(--muted-fg);
+  user-select: none;
+}
+
+.code {
+  flex: 1;
+  white-space: pre;
+  padding-inline-end: 16px;
+}
+
+:is(.diff-scroll, .diff-inline)[data-wrap] .code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
+}
+
+.tok {
+  color: var(--l);
+}
+
+:root.dark .tok,
+html.dark .tok {
+  color: var(--d);
+}
+
+.dl[data-type="add"] .changed,
+.half[data-type="add"] .changed {
+  background: var(--diff-add-word);
+  border-radius: 2px;
+}
+
+.dl[data-type="del"] .changed,
+.half[data-type="del"] .changed {
+  background: var(--diff-del-word);
+  border-radius: 2px;
+}
+
+.eof {
+  flex: none;
+  padding-inline-end: 8px;
+  color: var(--red);
+  user-select: none;
+}
+
+/* Moved code reads as one color on both ends, so it does not look like a deletion plus a
+   brand-new addition. */
+.dl[data-moved],
+.half[data-moved] {
+  background: var(--diff-move-bg);
+}
+
+.dl[data-moved] .gutter,
+.half[data-moved] .gutter {
+  background: var(--diff-move-gutter);
+}
+
+.dl[data-moved] .marker,
+.half[data-moved] .marker {
+  color: var(--diff-move);
+}
+
+.move-tag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: center;
+  block-size: 16px;
+  margin-inline-end: 8px;
+  padding-inline: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--diff-move) 22%, transparent);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.move-tag:active {
+  scale: 0.96;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .move-tag:hover {
+    background: color-mix(in oklch, var(--diff-move) 38%, transparent);
+  }
+}
+
+[data-flash] > .dl,
+[data-flash] > .pair {
+  outline: 2px solid var(--diff-move);
+  outline-offset: -2px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.pair .half + .half {
+  border-inline-start: 1px solid var(--border);
+}
+
+:is(.diff-scroll, .diff-inline)[data-layout="split"]:not([data-wrap]) .pair {
+  grid-template-columns: minmax(max-content, 1fr) minmax(max-content, 1fr);
+}
+
+:is(.diff-scroll, .diff-inline)[data-layout="split"] .gutter {
+  position: static;
+}
+
+.hunk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 26px;
+  background: var(--diff-hunk-bg);
+  color: var(--muted-fg);
+  font-size: var(--text-xs);
+  border-block: 1px solid color-mix(in oklch, var(--blue) 14%, transparent);
+}
+
+.hunk-gutter {
+  position: sticky;
+  inset-inline-start: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  inline-size: 11ch;
+  align-self: stretch;
+  flex: none;
+  background: color-mix(in oklch, var(--blue) 14%, var(--bg));
+}
+
+:is(.diff-scroll, .diff-inline)[data-layout="split"] .hunk-gutter {
+  inline-size: 6ch;
+}
+
+.expand {
+  display: grid;
+  place-items: center;
+  inline-size: 26px;
+  block-size: 22px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted-fg);
+}
+
+.expand:active {
+  background: var(--pressed);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .expand:hover {
+    background: color-mix(in oklch, var(--blue) 25%, transparent);
+    color: var(--fg);
+  }
+}
+
+.hunk-text {
+  white-space: pre;
+  overflow: clip;
+  text-overflow: ellipsis;
+  min-inline-size: 0;
+}
+
+.hunk-toggle {
+  flex: none;
+  block-size: 18px;
+  padding-inline: 6px;
+  border: 1px solid color-mix(in oklch, var(--diff-select) 45%, transparent);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--diff-select);
+  font-family: var(--font);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.hunk-toggle[data-state="on"] {
+  background: var(--diff-select);
+  color: oklch(0.99 0 none);
+}
+
+.hunk-toggle[data-state="off"] {
+  color: var(--muted-fg);
+  border-color: var(--border);
+}
+
+.hunk-toggle:active {
+  scale: 0.96;
+}
+
+/* ---------- images ---------- */
+
+.image-diff {
+  flex: 1;
+  min-block-size: 0;
+  overflow: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+}
+
+.image-side {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  max-inline-size: min(100%, 480px);
+}
+
+.image-side figcaption {
+  font-size: var(--text-sm);
+  color: var(--muted-fg);
+}
+
+.image-side img {
+  max-inline-size: 100%;
+  max-block-size: 60vh;
+  border: 2px solid var(--diff-add-gutter);
+  border-radius: 4px;
+  background-color: oklch(0.96 0 none);
+  background-image: conic-gradient(
+    oklch(0.88 0 none) 25%,
+    transparent 0 50%,
+    oklch(0.88 0 none) 0 75%,
+    transparent 0
+  );
+  background-size: 16px 16px;
+}
+
+.image-side[data-side="old"] img {
+  border-color: var(--diff-del-gutter);
+}
+
+.image-compare {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-block-size: 0;
+}
+
+.image-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px;
+  border-block-end: 1px solid var(--border);
+}
+
+.segmented-text button {
+  inline-size: auto;
+  padding-inline: 10px;
+  font-size: var(--text-sm);
+}
+
+.image-slider {
+  inline-size: min(240px, 50%);
+  accent-color: var(--diff-select);
+}
+
+/* Both images share one grid cell, so the old one lies exactly over the new one. */
+.image-stack {
+  position: relative;
+  display: grid;
+  max-inline-size: min(100%, 720px);
+  background-color: oklch(0.96 0 none);
+  background-image: conic-gradient(
+    oklch(0.88 0 none) 25%,
+    transparent 0 50%,
+    oklch(0.88 0 none) 0 75%,
+    transparent 0
+  );
+  background-size: 16px 16px;
+  border-radius: 4px;
+}
+
+.image-stack img {
+  grid-area: 1 / 1;
+  max-inline-size: 100%;
+  max-block-size: 60vh;
+  place-self: center;
+}
+
+.image-handle {
+  position: absolute;
+  inset-block: 0;
+  inline-size: 2px;
+  translate: -1px 0;
+  background: var(--diff-select);
+  pointer-events: none;
+}
+
+/* ---------- conflicts ---------- */
+
+.conflict {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-block-size: 0;
+}
+
+.conflict-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-block-end: 1px solid var(--border);
+  background: color-mix(in oklch, var(--orange) 10%, var(--bg));
+}
+
+.conflict-summary {
+  flex: 1;
+  display: grid;
+  min-inline-size: 180px;
+  font-size: var(--text-sm);
+}
+
+.conflict-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.conflict-text {
+  flex: 1;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  line-height: var(--diff-line);
+}
+
+.cl {
+  display: flex;
+}
+
+.cl .ln {
+  flex: none;
+  color: var(--muted-fg);
+  user-select: none;
+}
+
+.cl .code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding-inline-start: 1ch;
+}
+
+.cl[data-region="ours"] {
+  background: color-mix(in oklch, var(--blue) 14%, var(--bg));
+}
+
+.cl[data-region="theirs"] {
+  background: color-mix(in oklch, var(--green) 14%, var(--bg));
+}
+
+.cl[data-region="base"] {
+  background: color-mix(in oklch, var(--fg) 6%, var(--bg));
+}
+
+.cl[data-region="marker"] {
+  background: color-mix(in oklch, var(--orange) 28%, var(--bg));
+  font-weight: 600;
+}
+
+/* ---------- review notes ---------- */
+
+.diff-scroll,
+.diff-inline {
+  container-type: inline-size;
+}
+
+/* The "+" that starts a note: on the gutter's edge, shown when the pointer is on the line. */
+.note-add {
+  position: absolute;
+  inset-block-start: 1px;
+  inset-inline-end: -9px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  inline-size: 18px;
+  block-size: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.note-add:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.note-add:active {
+  scale: 0.92;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dl:hover .note-add,
+  .half:hover .note-add {
+    opacity: 1;
+  }
+}
+
+/* The lines a note being dragged covers. */
+.dl[data-picked],
+.half[data-picked] {
+  background: color-mix(in oklch, var(--primary) 16%, var(--bg));
+}
+
+.dl[data-picked] > .gutter,
+.half[data-picked] > .gutter {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.note-card {
+  position: sticky;
+  inset-inline-start: 0;
+  max-inline-size: min(720px, calc(100cqi - 24px));
+  margin: 6px 12px 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--primary);
+  border-radius: var(--radius);
+  background: var(--card);
+  font-family: var(--font);
+  font-size: var(--text-md);
+  line-height: 1.45;
+  white-space: normal;
+}
+
+.note-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 22px;
+  color: var(--muted-fg);
+  font-size: var(--text-sm);
+}
+
+.note-icon {
+  flex: none;
+  color: var(--primary);
+}
+
+.note-where {
+  flex: 1;
+  min-inline-size: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.note-actions {
+  display: flex;
+  gap: 2px;
+  margin-inline-start: auto;
+}
+
+.note-body {
+  margin: 2px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note-input {
+  display: block;
+  inline-size: 100%;
+  margin-block-start: 6px;
+  field-sizing: content;
+  min-block-size: 3lh;
+  max-block-size: 12lh;
+  resize: none;
+  font-family: var(--font);
+}
+
+.note-composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-block-start: 8px;
+}
+
+.note-hint {
+  margin-inline-end: auto;
+  font-size: var(--text-xs);
+}
+
+/* Notes about the whole file, above its diff. */
+.file-notes {
+  flex: none;
+  max-block-size: 40%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: 4px;
+  border-block-end: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.file-notes .note-card {
+  position: static;
+}

@@ -1,0 +1,1 @@
+var e=typeof orca==`object`&&orca!==null&&orca.document!==void 0||new URLSearchParams(location.search).has(`tab`)?`tab`:`panel`;function t(){e===`tab`&&typeof orca==`object`&&orca?.document&&orca.document.get().catch(()=>{})}export{e as n,t};

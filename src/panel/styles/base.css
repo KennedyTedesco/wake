@@ -1,0 +1,641 @@
+/* Orca hands its theme to plugin frames as --orca-* variables and a light/dark class on <html>.
+   Every color here derives from them, so the panel follows any Orca theme. */
+:root {
+  color-scheme: light dark;
+  --bg: var(--orca-background, oklch(0.99 0 none));
+  --fg: var(--orca-foreground, oklch(0.2 0 none));
+  --card: var(--orca-card, var(--bg));
+  --muted-fg: var(--orca-muted-foreground, oklch(0.55 0 none));
+  --border: var(--orca-border, oklch(0.9 0 none));
+  --input-border: var(--orca-input, var(--border));
+  --primary: var(--orca-primary, oklch(0.55 0.2 260));
+  --primary-fg: var(--orca-primary-foreground, oklch(0.99 0 none));
+  --popover: var(--orca-popover, var(--bg));
+  --popover-fg: var(--orca-popover-foreground, var(--fg));
+  --ring: var(--orca-ring, var(--primary));
+  --danger: var(--orca-destructive, oklch(0.6 0.22 25));
+  --radius: var(--orca-radius, 6px);
+  --font: var(--orca-font-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
+  --mono: var(--orca-font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+
+  --surface: color-mix(in oklch, var(--fg) 3.5%, var(--bg));
+  --hover: color-mix(in oklch, var(--fg) 6%, transparent);
+  --pressed: color-mix(in oklch, var(--fg) 11%, transparent);
+  --selected: color-mix(in oklch, var(--primary) 16%, transparent);
+  --selected-strong: color-mix(in oklch, var(--primary) 26%, transparent);
+  --soft-border: color-mix(in oklch, var(--border) 70%, transparent);
+
+  --green: oklch(0.64 0.16 150);
+  --red: oklch(0.62 0.2 25);
+  --yellow: oklch(0.74 0.15 80);
+  --blue: oklch(0.62 0.15 255);
+  --orange: oklch(0.7 0.17 55);
+
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --row: 28px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  block-size: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: var(--text-md);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  overflow: clip;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted-fg);
+}
+
+.spinner {
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in oklch, currentColor 25%, transparent);
+  border-block-start-color: currentColor;
+  display: inline-block;
+  flex: none;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* ---------- buttons ---------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  block-size: 28px;
+  padding-inline: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.button[data-variant="primary"] {
+  background: var(--primary);
+  border-color: transparent;
+  color: var(--primary-fg);
+}
+
+.button[data-variant="danger"] {
+  background: var(--danger);
+  border-color: transparent;
+  color: oklch(0.99 0 none);
+}
+
+.button:disabled {
+  opacity: 0.5;
+}
+
+.button:not(:disabled):active {
+  background: var(--pressed);
+}
+
+.button[data-variant]:not(:disabled):active {
+  filter: brightness(0.92);
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  flex: none;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--muted-fg);
+}
+
+.icon-button[aria-pressed="true"] {
+  color: var(--fg);
+  background: var(--pressed);
+}
+
+.icon-button:not(:disabled):active {
+  background: var(--pressed);
+}
+
+.link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--primary);
+  font-size: var(--text-sm);
+}
+
+.link-button:active {
+  opacity: 0.7;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:not(:disabled):hover {
+    background: color-mix(in oklch, var(--fg) 5%, var(--card));
+  }
+  .button[data-variant]:not(:disabled):hover {
+    background: color-mix(in oklch, var(--fg) 8%, var(--primary));
+  }
+  .button[data-variant="danger"]:not(:disabled):hover {
+    background: color-mix(in oklch, black 10%, var(--danger));
+  }
+  .icon-button:not(:disabled):hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
+  .link-button:hover {
+    text-decoration: underline;
+  }
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1px;
+  flex: none;
+}
+
+.segmented button {
+  display: grid;
+  place-items: center;
+  inline-size: 26px;
+  block-size: 22px;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--muted-fg);
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--pressed);
+  color: var(--fg);
+}
+
+.segmented button:active {
+  background: var(--pressed);
+}
+
+/* ---------- inputs ---------- */
+
+.input,
+.select {
+  inline-size: 100%;
+  min-block-size: 28px;
+  padding: 5px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-size: var(--text-md);
+}
+
+.input:focus-visible,
+.select:focus-visible,
+.search:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: -1px;
+}
+
+.input::placeholder {
+  color: var(--muted-fg);
+}
+
+.textarea {
+  resize: none;
+  field-sizing: content;
+  min-block-size: 56px;
+  max-block-size: 160px;
+  line-height: 1.45;
+}
+
+.select {
+  inline-size: auto;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  padding-block: 2px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 8px;
+  block-size: 28px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius);
+  color: var(--muted-fg);
+  background: var(--bg);
+  min-inline-size: 0;
+}
+
+.search-input {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  background: transparent;
+  outline: 0;
+  color: var(--fg);
+  font-size: var(--text-md);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.field-error,
+.field-hint {
+  margin-block-start: 6px;
+  font-size: var(--text-sm);
+}
+
+.field-error {
+  color: var(--red);
+}
+
+.field-hint {
+  color: var(--muted-fg);
+}
+
+.checkbox {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 15px;
+  block-size: 15px;
+  flex: none;
+  padding: 0;
+  border: 1px solid color-mix(in oklch, var(--fg) 30%, transparent);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--primary-fg);
+}
+
+.checkbox[data-state="on"],
+.checkbox[data-state="mixed"] {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.checkbox:disabled {
+  opacity: 0.4;
+}
+
+.checkbox:not(:disabled):active {
+  scale: 0.92;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.toggle input {
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  min-inline-size: 18px;
+  block-size: 16px;
+  padding-inline: 5px;
+  border-radius: 8px;
+  background: var(--pressed);
+  color: var(--fg);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  justify-content: center;
+}
+
+.count[data-tone="warning"] {
+  background: color-mix(in oklch, var(--orange) 30%, transparent);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  block-size: 17px;
+  padding-inline: 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--muted-fg);
+  white-space: nowrap;
+  max-inline-size: 110px;
+  overflow: clip;
+  text-overflow: ellipsis;
+}
+
+.tag[data-tone="warning"] {
+  color: var(--orange);
+  border-color: color-mix(in oklch, var(--orange) 50%, transparent);
+}
+
+.tag[data-tone="accent"] {
+  color: var(--primary);
+  border-color: color-mix(in oklch, var(--primary) 50%, transparent);
+}
+
+/* ---------- menu ---------- */
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.menu {
+  position: fixed;
+  min-inline-size: 180px;
+  max-inline-size: min(320px, calc(100vw - 8px));
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--popover);
+  color: var(--popover-fg);
+  box-shadow: 0 8px 24px oklch(0 0 none / 0.18);
+  outline: 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  inline-size: 100%;
+  block-size: 28px;
+  padding-inline: 8px;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  text-align: start;
+  font-size: var(--text-md);
+}
+
+.menu-item[data-active] {
+  background: var(--hover);
+}
+
+.menu-item:active {
+  background: var(--pressed);
+}
+
+.menu-item[data-destructive] {
+  color: var(--red);
+}
+
+.menu-item:disabled {
+  opacity: 0.45;
+}
+
+.menu-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 14px;
+  color: var(--muted-fg);
+}
+
+.menu-item[data-destructive] .menu-icon {
+  color: inherit;
+}
+
+.menu-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: clip;
+  text-overflow: ellipsis;
+}
+
+.menu-hint {
+  color: var(--muted-fg);
+  font-size: var(--text-sm);
+}
+
+.menu-separator {
+  block-size: 1px;
+  margin-block: 4px;
+  background: var(--border);
+}
+
+/* ---------- dialog ---------- */
+
+.dialog {
+  inline-size: min(440px, calc(100vw - 24px));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--popover);
+  color: var(--popover-fg);
+  box-shadow: 0 16px 48px oklch(0 0 none / 0.28);
+}
+
+.dialog::backdrop {
+  background: oklch(0 0 none / 0.35);
+}
+
+.dialog-title {
+  padding: 16px 16px 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dialog-body {
+  padding: 8px 16px 16px;
+}
+
+.dialog-text {
+  overflow-wrap: anywhere;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-block-start: 1px solid var(--border);
+  background: var(--surface);
+  border-end-start-radius: inherit;
+  border-end-end-radius: inherit;
+}
+
+.failure {
+  display: flex;
+  gap: 10px;
+}
+
+.failure-icon {
+  flex: none;
+  color: var(--orange);
+}
+
+.failure-text {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.failure-detail {
+  margin-block-start: 12px;
+  font-size: var(--text-sm);
+}
+
+.failure-detail summary {
+  cursor: pointer;
+  color: var(--muted-fg);
+}
+
+.failure-detail pre {
+  margin: 8px 0 0;
+  padding: 8px;
+  max-block-size: 200px;
+  overflow: auto;
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- toasts ---------- */
+
+.toasts {
+  position: fixed;
+  inset-block-end: 12px;
+  inset-inline: 12px;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-inline-size: min(460px, 100%);
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--popover);
+  color: var(--popover-fg);
+  box-shadow: 0 6px 20px oklch(0 0 none / 0.18);
+  font-size: var(--text-sm);
+  pointer-events: auto;
+}
+
+.toast[data-tone="success"] {
+  border-inline-start: 3px solid var(--green);
+}
+
+.toast[data-tone="error"] {
+  border-inline-start: 3px solid var(--red);
+}
+
+.toast-text {
+  overflow-wrap: anywhere;
+}
+
+.toast-action {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  padding-inline: 4px;
+}
+
+.toast-action:active {
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast {
+    animation: toast-in 180ms var(--ease-out);
+  }
+  .menu {
+    animation: pop-in 120ms var(--ease-out);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    scale: 0.97;
+  }
+}

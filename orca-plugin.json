@@ -1,0 +1,138 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stablyai/orca/main/docs/schemas/plugins/orca-plugin.v2.schema.json",
+  "manifestVersion": 2,
+  "execution": "trusted-worker",
+  "id": "wake",
+  "name": "Wake",
+  "version": "0.2.0",
+  "description": "A Git panel that works like GitHub Desktop: commit exactly the lines you want, send review notes to your agent, read each commit like a pull request, and switch, pull and push without leaving Orca.",
+  "license": "MIT",
+  "author": {
+    "name": "Kennedy Tedesco",
+    "url": "https://github.com/KennedyTedesco"
+  },
+  "repository": "https://github.com/KennedyTedesco/wake",
+  "icon": "docs/images/icon.png",
+  "engines": {
+    "orca": ">=1.4.260"
+  },
+  "pluginApi": 1,
+  "main": "src/worker/main.ts",
+  "contributes": {
+    "panels": [
+      {
+        "id": "git",
+        "title": "Wake",
+        "icon": "branch",
+        "entry": "dist/panel/index.html"
+      }
+    ],
+    "customEditors": [
+      {
+        "id": "tab",
+        "title": "Wake",
+        "filenames": ["Wake"],
+        "entry": "dist/panel/tab.html",
+        "priority": "default",
+        "frame": "isolated"
+      }
+    ],
+    "commands": [
+      { "id": "openTab", "title": "Wake: Open in a tab", "when": "workspace" },
+      { "id": "showPanel", "title": "Wake: Show in the sidebar" },
+      { "id": "fetch", "title": "Wake: Fetch", "when": "workspace" },
+      { "id": "pull", "title": "Wake: Pull", "when": "workspace" },
+      { "id": "push", "title": "Wake: Push", "when": "workspace" }
+    ],
+    "keybindings": [
+      { "command": "openTab", "key": "Mod+Shift+G", "when": "workspace" },
+      { "command": "showPanel", "key": "Mod+Alt+G" }
+    ],
+    "statusBarItems": [
+      {
+        "id": "branch",
+        "text": "Git",
+        "icon": "branch",
+        "tooltip": "Open Wake",
+        "command": "openTab"
+      }
+    ],
+    "events": [{ "on": "workspace.changed" }],
+    "settings": [
+      {
+        "key": "autoFetchMinutes",
+        "title": "Fetch automatically every (minutes)",
+        "description": "Fetches the current repository in the background so ahead and behind counts stay current. 0 turns it off.",
+        "type": "integer",
+        "default": 15,
+        "minimum": 0,
+        "maximum": 240
+      },
+      {
+        "key": "aiAgent",
+        "title": "Coding agent",
+        "description": "The coding agent CLI that drafts commit messages with the sparkle button, and that New agent starts for review notes. It runs on your own account, so it must be installed and signed in. Automatic uses the first one it finds.",
+        "type": "string",
+        "default": "auto",
+        "enum": ["auto", "claude", "codex", "gemini", "opencode"],
+        "enumLabels": ["Automatic", "Claude Code", "Codex", "Gemini CLI", "OpenCode"]
+      },
+      {
+        "key": "aiModel",
+        "title": "Model for commit messages",
+        "description": "Passed to the agent with --model, such as sonnet, haiku or gpt-5-mini. Leave it empty for the agent's default.",
+        "type": "string",
+        "default": "",
+        "placeholder": "Agent default"
+      },
+      {
+        "key": "aiInstructions",
+        "title": "Commit message instructions",
+        "description": "Extra rules for the drafted message, such as \"Use Conventional Commits\" or \"Write in Portuguese\".",
+        "type": "string",
+        "default": "",
+        "multiline": true
+      }
+    ]
+  },
+  "capabilities": [
+    { "kind": "workspace:read" },
+    { "kind": "workspace:write" },
+    { "kind": "terminal:send" },
+    { "kind": "agent:read" },
+    { "kind": "agent:launch" },
+    { "kind": "settings:own" }
+  ],
+  "cover": {
+    "path": "docs/images/changes.png",
+    "alt": "Wake in a full-size Orca tab: changed files as a folder tree, a diff with two excluded lines, code that moved, and a commit message that the agent wrote"
+  },
+  "screenshots": [
+    {
+      "path": "docs/images/notes.png",
+      "alt": "Review notes on a diff: a note on one line, a note on two lines, and the list of notes with the agents to send them to",
+      "caption": "Send review notes to your agent"
+    },
+    {
+      "path": "docs/images/history.png",
+      "alt": "A commit with 16 files: the file tree beside it, and every diff on one page",
+      "caption": "Read a commit like a pull request"
+    },
+    {
+      "path": "docs/images/side-by-side.png",
+      "alt": "A side-by-side diff with changed words marked and a function that moved inside the file",
+      "caption": "Side by side, with moved code marked"
+    },
+    {
+      "path": "docs/images/branches.png",
+      "alt": "The branch menu under the current branch, with a filter and the recent branches",
+      "caption": "Branches, pull and push in one place"
+    },
+    {
+      "path": "docs/images/light.png",
+      "alt": "Wake in a light Orca theme",
+      "caption": "Follows your Orca theme",
+      "theme": "light"
+    }
+  ]
+}
