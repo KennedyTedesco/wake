@@ -187,7 +187,16 @@ function applyRepoState(next: RepoState): void {
     set({ changesFocus: { kind: 'file', path: repo.files[0].path } })
   }
   const headMoved = previous?.lastCommit?.sha !== repo?.lastCommit?.sha
-  if (repo && (headMoved || !sameRepo) && get().history.commits.length > 0) void loadHistory(true)
+  // A push moves the upstream, not HEAD: the "not pushed" marks change with the count ahead.
+  const upstreamMoved = upstreamKey(previous) !== upstreamKey(repo)
+  if (repo && (headMoved || upstreamMoved || !sameRepo) && get().history.commits.length > 0) {
+    void loadHistory(true)
+  }
+}
+
+function upstreamKey(repo: RepoSnapshot | null): string {
+  const upstream = repo?.head.kind === 'branch' ? repo.head.upstream : null
+  return upstream ? `${upstream.name}\0${upstream.ahead}` : ''
 }
 
 // ---------- preferences and navigation ----------
@@ -447,14 +456,23 @@ export async function loadHistory(reset: boolean): Promise<void> {
     if (ticket !== historyRequest) return
     set((state) => {
       const commits = reset ? page.commits : [...state.history.commits, ...page.commits]
-      const keep = commits.some((item) => item.sha === state.history.selectedSha)
+      const fresh = commits.find((item) => item.sha === state.history.selectedSha)
+      const details = state.history.details
+      const sameDetails = details && fresh && details.commit.sha === fresh.sha ? details : null
       return {
         history: {
           ...state.history,
           commits,
           hasMore: page.hasMore,
           loading: false,
-          ...(keep ? {} : { selectedSha: null, details: null })
+          ...(fresh
+            ? // The open commit keeps its files; only its push state can have changed.
+              {
+                details: sameDetails
+                  ? { ...sameDetails, commit: { ...sameDetails.commit, unpushed: fresh.unpushed } }
+                  : details
+              }
+            : { selectedSha: null, details: null })
         }
       }
     })
